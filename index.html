@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D FPS Game</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+      }
+      #gameCanvas {
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+      #crosshair {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+        z-index: 1000;
+      }
+      #crosshair::before,
+      #crosshair::after {
+        content: "";
+        position: absolute;
+        background: white;
+        box-shadow: 0 0 2px black;
+      }
+      #crosshair::before {
+        width: 20px;
+        height: 2px;
+        top: 9px;
+        left: 0;
+      }
+      #crosshair::after {
+        width: 2px;
+        height: 20px;
+        top: 0;
+        left: 9px;
+      }
+      #hud {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        font-size: 18px;
+        z-index: 1000;
+      }
+      #connectionStatus {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        font-size: 16px;
+        z-index: 1000;
+      }
+      #menu {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        padding: 30px;
+        border-radius: 10px;
+        color: white;
+        text-align: center;
+        z-index: 2000;
+      }
+      #menu input {
+        display: block;
+        margin: 10px auto;
+        padding: 10px;
+        width: 200px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      #menu button {
+        margin: 10px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        background: #4caf50;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      #menu button:hover {
+        background: #45a049;
+      }
+      #playerList {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        font-size: 14px;
+        z-index: 1000;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="gameCanvas"></canvas>
+    <div id="crosshair"></div>
+    <div id="hud">
+      <div>Health: <span id="health">100</span></div>
+      <div>Ammo: <span id="ammo">30</span> / <span id="maxAmmo">30</span></div>
+    </div>
+    <div id="connectionStatus">Disconnected</div>
+    <div id="playerList"></div>
+    <div id="menu">
+      <h2>3D FPS Game</h2>
+      <input
+        type="text"
+        id="playerName"
+        placeholder="Enter your name"
+        value="Player"
+      />
+      <input
+        type="text"
+        id="serverUrl"
+        placeholder="Server URL"
+        value="ws://localhost:8080"
+      />
+      <button onclick="hostGame()">Host Game</button>
+      <button onclick="joinGame()">Join Game</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="game.js"></script>
+  </body>
+</html>
