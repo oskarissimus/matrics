@@ -1,0 +1,38 @@
+{
+  "name": "counter-strike-3d-browser",
+  "version": "1.0.0",
+  "description": "A 3D first-person shooter game like Counter-Strike that runs in the browser with multiplayer support",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "fps",
+    "game",
+    "3d",
+    "counter-strike",
+    "multiplayer",
+    "browser",
+    "webgl",
+    "threejs",
+    "websocket"
+  ],
+  "author": "Counter Strike 3D Team",
+  "license": "MIT",
+  "dependencies": {
+    "ws": "^8.14.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/counter-strike-3d-browser.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/counter-strike-3d-browser/issues"
+  },
+  "homepage": "https://github.com/your-username/counter-strike-3d-browser#readme"
+}

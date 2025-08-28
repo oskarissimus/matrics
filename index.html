@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Counter Strike 3D - Browser FPS</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: #000;
+        font-family: Arial, sans-serif;
+      }
+
+      #gameContainer {
+        position: relative;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #hud {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 100;
+      }
+
+      #crosshair {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        pointer-events: none;
+      }
+
+      #crosshair::before,
+      #crosshair::after {
+        content: "";
+        position: absolute;
+        background: #fff;
+      }
+
+      #crosshair::before {
+        top: 50%;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        transform: translateY(-50%);
+      }
+
+      #crosshair::after {
+        left: 50%;
+        top: 0;
+        width: 2px;
+        height: 100%;
+        transform: translateX(-50%);
+      }
+
+      #healthBar {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        width: 200px;
+        height: 20px;
+        background: rgba(255, 0, 0, 0.3);
+        border: 2px solid #fff;
+        pointer-events: none;
+      }
+
+      #healthFill {
+        height: 100%;
+        background: #ff0000;
+        width: 100%;
+        transition: width 0.3s;
+      }
+
+      #ammoCounter {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        color: #fff;
+        font-size: 24px;
+        font-weight: bold;
+        pointer-events: none;
+      }
+
+      #playerList {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        color: #fff;
+        font-size: 14px;
+        pointer-events: none;
+      }
+
+      #connectionStatus {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        color: #fff;
+        font-size: 14px;
+        pointer-events: none;
+      }
+
+      #menu {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 200;
+      }
+
+      #menu h1 {
+        color: #fff;
+        margin-bottom: 30px;
+      }
+
+      #menu input,
+      #menu button {
+        margin: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        border: none;
+        border-radius: 5px;
+      }
+
+      #menu button {
+        background: #007bff;
+        color: white;
+        cursor: pointer;
+      }
+
+      #menu button:hover {
+        background: #0056b3;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="gameContainer">
+      <div id="menu">
+        <h1>Counter Strike 3D</h1>
+        <input
+          type="text"
+          id="playerName"
+          placeholder="Enter your name"
+          value="Player"
+        />
+        <input
+          type="text"
+          id="serverUrl"
+          placeholder="Server URL (optional)"
+          value="ws://localhost:8080"
+        />
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="createServer()">Host Game</button>
+      </div>
+
+      <div id="hud" class="hidden">
+        <div id="crosshair"></div>
+        <div id="healthBar">
+          <div id="healthFill"></div>
+        </div>
+        <div id="ammoCounter">30 / 90</div>
+        <div id="playerList"></div>
+        <div id="connectionStatus">Connecting...</div>
+      </div>
+    </div>
+
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <!-- Game Scripts -->
+    <script src="js/networking.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/weapon.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/game.js"></script>
+    <script src="js/main.js"></script>
+  </body>
+</html>
