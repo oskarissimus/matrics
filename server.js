@@ -13,84 +13,239 @@ const io = socketIO(server, {
 });
 
 // Serve static files
-app.use(express.static(__dirname));
+app.use(express.static('.'));
 
 // Game rooms
-const rooms = {};
+const rooms = new Map();
 
-// Generate room code
+class Room {
+    constructor(code, hostId) {
+        this.code = code;
+        this.hostId = hostId;
+        this.players = new Map();
+        this.bullets = [];
+        this.gameStarted = false;
+    }
+
+    addPlayer(id, playerData) {
+        this.players.set(id, {
+            id,
+            name: playerData.name,
+            position: { x: 0, y: 2, z: 0 },
+            rotation: { x: 0, y: 0 },
+            health: 100,
+            alive: true
+        });
+    }
+
+    removePlayer(id) {
+        this.players.delete(id);
+    }
+
+    updatePlayer(id, data) {
+        const player = this.players.get(id);
+        if (player) {
+            if (data.position) player.position = data.position;
+            if (data.rotation) player.rotation = data.rotation;
+            if (data.health !== undefined) player.health = data.health;
+            if (data.alive !== undefined) player.alive = data.alive;
+        }
+    }
+
+    getPlayersArray() {
+        return Array.from(this.players.values());
+    }
+}
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+    console.log('New client connected:', socket.id);
+    
+    let currentRoom = null;
+    let playerData = null;
+
+    // Host a new game
+    socket.on('hostGame', (data) => {
+        const roomCode = generateRoomCode();
+        const room = new Room(roomCode, socket.id);
+        rooms.set(roomCode, room);
+        
+        currentRoom = roomCode;
+        playerData = data;
+        room.addPlayer(socket.id, data);
+        
+        socket.join(roomCode);
+        socket.emit('roomCreated', { roomCode, playerId: socket.id });
+        
+        console.log(`Room ${roomCode} created by ${socket.id}`);
+    });
+
+    // Join an existing game
+    socket.on('joinGame', (data) => {
+        const { roomCode, player } = data;
+        const room = rooms.get(roomCode);
+        
+        if (room && !room.gameStarted) {
+            currentRoom = roomCode;
+            playerData = player;
+            room.addPlayer(socket.id, player);
+            
+            socket.join(roomCode);
+            socket.emit('joinedRoom', { 
+                roomCode, 
+                playerId: socket.id,
+                players: room.getPlayersArray()
+            });
+            
+            // Notify other players
+            socket.to(roomCode).emit('playerJoined', {
+                id: socket.id,
+                name: player.name,
+                position: { x: 0, y: 2, z: 0 },
+                rotation: { x: 0, y: 0 },
+                health: 100
+            });
+            
+            console.log(`Player ${socket.id} joined room ${roomCode}`);
+        } else {
+            socket.emit('joinError', { message: 'Room not found or game already started' });
+        }
+    });
+
+    // Start the game
+    socket.on('startGame', () => {
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room && room.hostId === socket.id) {
+                room.gameStarted = true;
+                io.to(currentRoom).emit('gameStarted');
+            }
+        }
+    });
+
+    // Update player position and rotation
+    socket.on('playerUpdate', (data) => {
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room) {
+                room.updatePlayer(socket.id, data);
+                
+                // Broadcast to other players
+                socket.to(currentRoom).emit('playerMoved', {
+                    id: socket.id,
+                    position: data.position,
+                    rotation: data.rotation
+                });
+            }
+        }
+    });
+
+    // Handle shooting
+    socket.on('shoot', (bulletData) => {
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room) {
+                const bullet = {
+                    id: Date.now() + Math.random(),
+                    ownerId: socket.id,
+                    position: bulletData.position,
+                    direction: bulletData.direction,
+                    timestamp: Date.now()
+                };
+                
+                room.bullets.push(bullet);
+                
+                // Broadcast to all players including sender
+                io.to(currentRoom).emit('bulletFired', bullet);
+                
+                // Clean up old bullets after 5 seconds
+                setTimeout(() => {
+                    const index = room.bullets.findIndex(b => b.id === bullet.id);
+                    if (index !== -1) {
+                        room.bullets.splice(index, 1);
+                    }
+                }, 5000);
+            }
+        }
+    });
+
+    // Handle player hit
+    socket.on('playerHit', (data) => {
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room) {
+                const { playerId, damage } = data;
+                const player = room.players.get(playerId);
+                
+                if (player) {
+                    player.health = Math.max(0, player.health - damage);
+                    
+                    io.to(currentRoom).emit('playerDamaged', {
+                        id: playerId,
+                        health: player.health,
+                        alive: player.health > 0
+                    });
+                    
+                    if (player.health <= 0) {
+                        // Handle player death
+                        setTimeout(() => {
+                            player.health = 100;
+                            player.position = { 
+                                x: (Math.random() - 0.5) * 20, 
+                                y: 2, 
+                                z: (Math.random() - 0.5) * 20 
+                            };
+                            
+                            io.to(currentRoom).emit('playerRespawned', {
+                                id: playerId,
+                                position: player.position,
+                                health: player.health
+                            });
+                        }, 3000);
+                    }
+                }
+            }
+        }
+    });
+
+    // Handle disconnect
+    socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+        
+        if (currentRoom) {
+            const room = rooms.get(currentRoom);
+            if (room) {
+                room.removePlayer(socket.id);
+                
+                // Notify other players
+                socket.to(currentRoom).emit('playerLeft', { id: socket.id });
+                
+                // If room is empty or host left, delete room
+                if (room.players.size === 0 || room.hostId === socket.id) {
+                    rooms.delete(currentRoom);
+                    io.to(currentRoom).emit('roomClosed');
+                    console.log(`Room ${currentRoom} closed`);
+                }
+            }
+        }
+    });
+
+    // Chat messages
+    socket.on('chatMessage', (message) => {
+        if (currentRoom && playerData) {
+            io.to(currentRoom).emit('chatMessage', {
+                playerId: socket.id,
+                playerName: playerData.name,
+                message: message,
+                timestamp: Date.now()
+            });
+        }
+    });
+});
+
 function generateRoomCode() {
     return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
-
-io.on('connection', (socket) => {
-    console.log('New player connected:', socket.id);
-    
-    let currentRoom = null;
-    let playerInfo = null;
-    
-    socket.on('joinGame', (data) => {
-        const { name, room } = data;
-        playerInfo = {
-            id: socket.id,
-            name: name,
-            position: { x: Math.random() * 40 - 20, y: 1.6, z: Math.random() * 40 - 20 },
-            rotation: { x: 0, y: 0 }
-        };
-        
-        // Join or create room
-        if (room && rooms[room]) {
-            currentRoom = room;
-        } else {
-            currentRoom = room || generateRoomCode();
-            if (!rooms[currentRoom]) {
-                rooms[currentRoom] = {};
-            }
-        }
-        
-        // Join the room
-        socket.join(currentRoom);
-        rooms[currentRoom][socket.id] = playerInfo;
-        
-        socket.emit('roomJoined', currentRoom);
-        io.to(currentRoom).emit('playerUpdate', rooms[currentRoom]);
-        
-        console.log(`Player ${name} joined room ${currentRoom}`);
-    });
-    
-    socket.on('updatePosition', (data) => {
-        if (currentRoom && rooms[currentRoom] && rooms[currentRoom][socket.id]) {
-            rooms[currentRoom][socket.id].position = data.position;
-            rooms[currentRoom][socket.id].rotation = data.rotation;
-            
-            // Broadcast to other players in the room
-            socket.to(currentRoom).emit('playerUpdate', rooms[currentRoom]);
-        }
-    });
-    
-    socket.on('shoot', (data) => {
-        if (currentRoom) {
-            // Broadcast bullet to other players in the room
-            socket.to(currentRoom).emit('bulletFired', data);
-        }
-    });
-    
-    socket.on('disconnect', () => {
-        if (currentRoom && rooms[currentRoom]) {
-            delete rooms[currentRoom][socket.id];
-            
-            // If room is empty, delete it
-            if (Object.keys(rooms[currentRoom]).length === 0) {
-                delete rooms[currentRoom];
-            } else {
-                // Notify other players
-                io.to(currentRoom).emit('playerUpdate', rooms[currentRoom]);
-            }
-        }
-        
-        console.log('Player disconnected:', socket.id);
-    });
-});
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
