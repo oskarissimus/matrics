@@ -29,6 +29,9 @@
 
 - after opening game player immediately spawns in game with no lobby
 - each new player gets next number suffix
+- crosshair should be visible in the center of the screen for aiming
+- bullets shot should be visible
+- simple pistol weapon model should be visible on the screen. weapon is attached to the camera and the camera should be added to the scene.
 
 ## non-functional requirements
 
