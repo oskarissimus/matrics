@@ -35,3 +35,4 @@
 - dont create readme file
 - server should be started with npm start
 - no need to handle multiple games in single server
+- dont put comments in code
