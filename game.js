@@ -4,6 +4,7 @@ let players = {};
 let myPlayerId;
 let myPlayerData;
 let myPlayerMesh;
+let labelRenderer;
 
 const moveSpeed = 0.15;
 const mouseSensitivity = 0.002;
@@ -41,6 +42,14 @@ function init() {
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     document.getElementById('gameCanvas').appendChild(renderer.domElement);
+
+    // Setup CSS2D renderer for name tags
+    labelRenderer = new THREE.CSS2DRenderer();
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.domElement.style.position = 'absolute';
+    labelRenderer.domElement.style.top = '0px';
+    labelRenderer.domElement.style.pointerEvents = 'none';
+    document.getElementById('gameCanvas').appendChild(labelRenderer.domElement);
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
@@ -115,6 +124,67 @@ function createWeapon() {
     
     camera.add(weaponGroup);
     weaponMesh = weaponGroup;
+}
+
+function createBlockyCharacter(color, playerName) {
+    const playerGroup = new THREE.Group();
+    const material = new THREE.MeshPhongMaterial({ color: color });
+
+    // Head
+    const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const headMesh = new THREE.Mesh(headGeo, material);
+    headMesh.position.set(0, 1.45, 0);
+    headMesh.castShadow = true;
+    headMesh.receiveShadow = true;
+    playerGroup.add(headMesh);
+
+    // Torso
+    const torsoGeo = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+    const torsoMesh = new THREE.Mesh(torsoGeo, material);
+    torsoMesh.position.set(0, 0.9, 0);
+    torsoMesh.castShadow = true;
+    torsoMesh.receiveShadow = true;
+    playerGroup.add(torsoMesh);
+
+    // Left Arm
+    const armGeo = new THREE.BoxGeometry(0.25, 0.7, 0.25);
+    const leftArmMesh = new THREE.Mesh(armGeo, material);
+    leftArmMesh.position.set(-0.45, 0.95, 0);
+    leftArmMesh.castShadow = true;
+    leftArmMesh.receiveShadow = true;
+    playerGroup.add(leftArmMesh);
+
+    // Right Arm
+    const rightArmMesh = new THREE.Mesh(armGeo, material);
+    rightArmMesh.position.set(0.45, 0.95, 0);
+    rightArmMesh.castShadow = true;
+    rightArmMesh.receiveShadow = true;
+    playerGroup.add(rightArmMesh);
+
+    // Left Leg
+    const legGeo = new THREE.BoxGeometry(0.25, 0.75, 0.25);
+    const leftLegMesh = new THREE.Mesh(legGeo, material);
+    leftLegMesh.position.set(-0.175, 0.375, 0);
+    leftLegMesh.castShadow = true;
+    leftLegMesh.receiveShadow = true;
+    playerGroup.add(leftLegMesh);
+
+    // Right Leg
+    const rightLegMesh = new THREE.Mesh(legGeo, material);
+    rightLegMesh.position.set(0.175, 0.375, 0);
+    rightLegMesh.castShadow = true;
+    rightLegMesh.receiveShadow = true;
+    playerGroup.add(rightLegMesh);
+
+    // Name Tag (CSS2DObject)
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'player-nametag';
+    nameDiv.textContent = playerName;
+    const nameLabel = new THREE.CSS2DObject(nameDiv);
+    nameLabel.position.set(0, 2.4, 0);
+    playerGroup.add(nameLabel);
+
+    return playerGroup;
 }
 
 function createBullet(origin, direction) {
@@ -238,20 +308,22 @@ function shoot() {
     createBullet(bulletOrigin, shootDirection);
     
     raycaster.set(camera.position, shootDirection);
-    
+
     const intersects = [];
     for (let playerId in players) {
         if (playerId !== myPlayerId && players[playerId].mesh) {
-            intersects.push(...raycaster.intersectObject(players[playerId].mesh));
+            intersects.push(...raycaster.intersectObject(players[playerId].mesh, true));
         }
     }
-    
+
     if (intersects.length > 0) {
         const hit = intersects[0];
-        const hitPlayerId = Object.keys(players).find(id => 
-            players[id].mesh === hit.object
+        // hit.object is the individual body part, get parent group
+        const hitGroup = hit.object.parent;
+        const hitPlayerId = Object.keys(players).find(id =>
+            players[id].mesh === hitGroup
         );
-        
+
         if (hitPlayerId) {
             socket.emit('hit', {
                 playerId: hitPlayerId,
@@ -305,7 +377,7 @@ function connectToServer() {
         if (players[data.id]) {
             players[data.id].mesh.position.set(
                 data.position.x,
-                data.position.y,
+                data.position.y - 1.0,  // Offset so feet touch ground
                 data.position.z
             );
             players[data.id].mesh.rotation.y = data.rotation.y;
@@ -345,7 +417,7 @@ function connectToServer() {
             players[data.playerId].mesh.visible = true;
             players[data.playerId].mesh.position.set(
                 data.position.x,
-                data.position.y,
+                data.position.y - 1.0,  // Offset so feet touch ground
                 data.position.z
             );
         }
@@ -357,22 +429,16 @@ function connectToServer() {
 }
 
 function addPlayer(playerData) {
-    const geometry = new THREE.BoxGeometry(0.8, 1.8, 0.8);
-    const material = new THREE.MeshPhongMaterial({ 
-        color: playerData.color 
-    });
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.set(
+    const playerGroup = createBlockyCharacter(playerData.color, playerData.name);
+    playerGroup.position.set(
         playerData.position.x,
-        playerData.position.y,
+        playerData.position.y - 1.0,  // Offset so feet touch ground
         playerData.position.z
     );
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    scene.add(mesh);
-    
+    scene.add(playerGroup);
+
     players[playerData.id] = {
-        mesh: mesh,
+        mesh: playerGroup,
         data: playerData
     };
 }
@@ -451,19 +517,21 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    labelRenderer.setSize(window.innerWidth, window.innerHeight);
 }
 
 let clock = new THREE.Clock();
 
 function animate() {
     requestAnimationFrame(animate);
-    
+
     const deltaTime = clock.getDelta();
-    
+
     updateMovement();
     updateBullets(deltaTime);
-    
+
     renderer.render(scene, camera);
+    labelRenderer.render(scene, camera);
 }
 
 init();

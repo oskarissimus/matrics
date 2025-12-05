@@ -115,6 +115,18 @@
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
         text-align: right;
       }
+
+      .player-nametag {
+        color: white;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        background: rgba(0, 0, 0, 0.5);
+        padding: 4px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+      }
     </style>
   </head>
   <body>
@@ -134,7 +146,8 @@
       </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/three@0.150.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/renderers/CSS2DRenderer.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="game.js"></script>
   </body>
