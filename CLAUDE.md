@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Language Preference
+
+When using voice conversation (converse tool), always respond in Polish.
+
 ## Project Overview
 
 Matrics is a browser-based 3D multiplayer FPS game built with Three.js and Socket.IO. Players spawn immediately into the game with no lobby, can move around, shoot each other with pistols, and respawn after death.

@@ -10,12 +10,47 @@ const io = socketIO(server);
 
 const PORT = 3000;
 
-// Serve static files
 app.use(express.static(__dirname));
 
-// Game state
 const players = {};
 let playerCount = 0;
+
+const PLAYER_RADIUS = 0.5;
+const collisionObstacles = [
+    { x: 0, z: -50, halfW: 50, halfD: 1 },
+    { x: 0, z: 50, halfW: 50, halfD: 1 },
+    { x: 50, z: 0, halfW: 1, halfD: 50 },
+    { x: -50, z: 0, halfW: 1, halfD: 50 },
+    { x: 0, z: 0, halfW: 2.5, halfD: 2.5 },
+    { x: 25, z: 25, halfW: 1.5, halfD: 1.5 },
+    { x: -25, z: 25, halfW: 1.5, halfD: 1.5 },
+    { x: 25, z: -25, halfW: 1.5, halfD: 1.5 },
+    { x: -25, z: -25, halfW: 1.5, halfD: 1.5 },
+    { x: 15, z: 0, halfW: 0.75, halfD: 10 },
+    { x: 0, z: 15, halfW: 10, halfD: 0.75 }
+];
+
+function checkCollision(x, z) {
+    for (const obs of collisionObstacles) {
+        const dx = Math.abs(x - obs.x);
+        const dz = Math.abs(z - obs.z);
+        if (dx < obs.halfW + PLAYER_RADIUS && dz < obs.halfD + PLAYER_RADIUS) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function getSpawnPosition() {
+    let x, z;
+    let attempts = 0;
+    do {
+        x = Math.random() * 80 - 40;
+        z = Math.random() * 80 - 40;
+        attempts++;
+    } while (checkCollision(x, z) && attempts < 100);
+    return { x, y: 1, z };
+}
 
 const COLOR_PALETTES = [
   { primary: 0xff3333, secondary: 0x3366ff, accent: 0xffcc00 },
@@ -45,6 +80,15 @@ function validatePlayerName(name) {
     return { valid: true, name: trimmedName };
 }
 
+function getScoreboard() {
+    return Object.values(players).map(p => ({
+        id: p.id,
+        name: p.name,
+        kills: p.kills,
+        deaths: p.deaths
+    })).sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
+}
+
 io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
 
@@ -56,15 +100,13 @@ io.on('connection', (socket) => {
     const newPlayer = {
         id: socket.id,
         name: playerName,
-        position: {
-            x: Math.random() * 20 - 10,
-            y: 1,
-            z: Math.random() * 20 - 10
-        },
+        position: getSpawnPosition(),
         rotation: { x: 0, y: 0, z: 0 },
         colorScheme: COLOR_PALETTES[playerCount % COLOR_PALETTES.length],
         hp: 100,
-        isDead: false
+        isDead: false,
+        kills: 0,
+        deaths: 0
     };
     
     players[socket.id] = newPlayer;
@@ -117,18 +159,22 @@ io.on('connection', (socket) => {
             // Check if player died
             if (players[data.playerId].hp <= 0) {
                 players[data.playerId].isDead = true;
-                io.emit('playerDied', { playerId: data.playerId });
+                players[data.playerId].deaths++;
+                if (players[socket.id]) {
+                    players[socket.id].kills++;
+                }
+                io.emit('playerDied', {
+                    playerId: data.playerId,
+                    killerId: socket.id
+                });
+                io.emit('scoreUpdate', getScoreboard());
 
                 // Respawn player after 3 seconds
                 setTimeout(() => {
                     if (players[data.playerId]) {
                         players[data.playerId].hp = 100;
                         players[data.playerId].isDead = false;
-                        players[data.playerId].position = {
-                            x: Math.random() * 20 - 10,
-                            y: 1,
-                            z: Math.random() * 20 - 10
-                        };
+                        players[data.playerId].position = getSpawnPosition();
                         io.emit('playerRespawn', {
                             playerId: data.playerId,
                             position: players[data.playerId].position,
@@ -138,6 +184,10 @@ io.on('connection', (socket) => {
                 }, 3000);
             }
         }
+    });
+
+    socket.on('requestScoreboard', () => {
+        socket.emit('scoreUpdate', getScoreboard());
     });
     
     // Handle disconnection

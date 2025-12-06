@@ -22,6 +22,8 @@ const shootDirection = new THREE.Vector3();
 
 let currentHP = 100;
 let isDead = false;
+let scoreboardData = [];
+let showScoreboard = false;
 
 const bullets = [];
 
@@ -507,58 +509,68 @@ function createBullet(origin, direction) {
     return bullet;
 }
 
+function removeBullet(bullet, index) {
+    scene.remove(bullet.mesh);
+    scene.remove(bullet.trail);
+    bullet.mesh.geometry.dispose();
+    bullet.mesh.material.dispose();
+    bullet.trail.geometry.dispose();
+    bullet.trail.material.dispose();
+    bullets.splice(index, 1);
+}
+
 function updateBullets(deltaTime) {
+    const bulletRaycaster = new THREE.Raycaster();
+
     for (let i = bullets.length - 1; i >= 0; i--) {
         const bullet = bullets[i];
         bullet.age += deltaTime;
-        
+
         if (bullet.age > bullet.lifetime) {
-            scene.remove(bullet.mesh);
-            scene.remove(bullet.trail);
-
-            // Dispose geometries and materials to free memory
-            bullet.mesh.geometry.dispose();
-            bullet.mesh.material.dispose();
-            bullet.trail.geometry.dispose();
-            bullet.trail.material.dispose();
-
-            bullets.splice(i, 1);
-        } else {
-            bullet.mesh.position.addScaledVector(bullet.direction, bullet.speed);
-
-            // Update trail every 2 frames
-            bullet.trailUpdateCounter++;
-            if (bullet.trailUpdateCounter >= 2) {
-                bullet.trailPositions.unshift(bullet.mesh.position.clone());
-                if (bullet.trailPositions.length > BULLET_TRAIL_LENGTH) {
-                    bullet.trailPositions.pop();
-                }
-                bullet.trailUpdateCounter = 0;
-
-                // Update trail geometry
-                const positions = bullet.trail.geometry.attributes.position.array;
-                for (let i = 0; i < bullet.trailPositions.length; i++) {
-                    positions[i * 3] = bullet.trailPositions[i].x;
-                    positions[i * 3 + 1] = bullet.trailPositions[i].y;
-                    positions[i * 3 + 2] = bullet.trailPositions[i].z;
-                }
-                bullet.trail.geometry.attributes.position.needsUpdate = true;
-            }
-
-            // Slower cubic easeOut fade
-            const t = bullet.age / bullet.lifetime;
-            let opacity;
-
-            if (t < FADE_START_PERCENT) {
-                opacity = 1.0;  // Full opacity for first 60%
-            } else {
-                const fadeT = (t - FADE_START_PERCENT) / (1.0 - FADE_START_PERCENT);
-                opacity = 1 - Math.pow(fadeT, 3);  // Cubic easeOut
-            }
-
-            bullet.mesh.material.opacity = opacity;
-            bullet.trail.material.opacity = opacity * 0.6;  // Trail slightly more transparent
+            removeBullet(bullet, i);
+            continue;
         }
+
+        const oldPosition = bullet.mesh.position.clone();
+        bullet.mesh.position.addScaledVector(bullet.direction, bullet.speed);
+
+        bulletRaycaster.set(oldPosition, bullet.direction);
+        bulletRaycaster.far = bullet.speed;
+        const hits = bulletRaycaster.intersectObjects(obstacleMeshes, false);
+        if (hits.length > 0) {
+            removeBullet(bullet, i);
+            continue;
+        }
+
+        bullet.trailUpdateCounter++;
+        if (bullet.trailUpdateCounter >= 2) {
+            bullet.trailPositions.unshift(bullet.mesh.position.clone());
+            if (bullet.trailPositions.length > BULLET_TRAIL_LENGTH) {
+                bullet.trailPositions.pop();
+            }
+            bullet.trailUpdateCounter = 0;
+
+            const positions = bullet.trail.geometry.attributes.position.array;
+            for (let j = 0; j < bullet.trailPositions.length; j++) {
+                positions[j * 3] = bullet.trailPositions[j].x;
+                positions[j * 3 + 1] = bullet.trailPositions[j].y;
+                positions[j * 3 + 2] = bullet.trailPositions[j].z;
+            }
+            bullet.trail.geometry.attributes.position.needsUpdate = true;
+        }
+
+        const t = bullet.age / bullet.lifetime;
+        let opacity;
+
+        if (t < FADE_START_PERCENT) {
+            opacity = 1.0;
+        } else {
+            const fadeT = (t - FADE_START_PERCENT) / (1.0 - FADE_START_PERCENT);
+            opacity = 1 - Math.pow(fadeT, 3);
+        }
+
+        bullet.mesh.material.opacity = opacity;
+        bullet.trail.material.opacity = opacity * 0.6;
     }
 }
 
@@ -595,6 +607,14 @@ function onKeyDown(event) {
         case 'KeyD':
             moveRight = true;
             break;
+        case 'Tab':
+            event.preventDefault();
+            showScoreboard = true;
+            if (socket && socket.connected) {
+                socket.emit('requestScoreboard');
+            }
+            updateScoreboardVisibility();
+            break;
     }
 }
 
@@ -611,6 +631,11 @@ function onKeyUp(event) {
             break;
         case 'KeyD':
             moveRight = false;
+            break;
+        case 'Tab':
+            event.preventDefault();
+            showScoreboard = false;
+            updateScoreboardVisibility();
             break;
     }
 }
@@ -734,14 +759,23 @@ function connectToServer() {
     socket.on('playerDied', (data) => {
         if (data.playerId === myPlayerId) {
             isDead = true;
+            updateScoreboardVisibility();
         } else if (players[data.playerId]) {
             players[data.playerId].mesh.visible = false;
+        }
+    });
+
+    socket.on('scoreUpdate', (data) => {
+        scoreboardData = data;
+        if (showScoreboard || isDead) {
+            renderScoreboard();
         }
     });
     
     socket.on('playerRespawn', (data) => {
         if (data.playerId === myPlayerId) {
             isDead = false;
+            updateScoreboardVisibility();
             camera.position.set(
                 data.position.x,
                 data.position.y,
@@ -789,7 +823,7 @@ function removePlayer(playerId) {
 function updateHPDisplay() {
     document.getElementById('hpText').textContent = `HP: ${currentHP}`;
     document.getElementById('hpFill').style.width = `${currentHP}%`;
-    
+
     const hpFill = document.getElementById('hpFill');
     if (currentHP > 60) {
         hpFill.style.background = 'linear-gradient(90deg, #00ff00, #44ff44)';
@@ -798,6 +832,38 @@ function updateHPDisplay() {
     } else {
         hpFill.style.background = 'linear-gradient(90deg, #ff0000, #ff4444)';
     }
+}
+
+function updateScoreboardVisibility() {
+    const scoreboard = document.getElementById('scoreboard');
+    const deathMessage = document.getElementById('deathMessage');
+
+    if (showScoreboard || isDead) {
+        scoreboard.classList.add('visible');
+        renderScoreboard();
+    } else {
+        scoreboard.classList.remove('visible');
+    }
+
+    if (isDead) {
+        deathMessage.classList.add('visible');
+    } else {
+        deathMessage.classList.remove('visible');
+    }
+}
+
+function renderScoreboard() {
+    const tbody = document.getElementById('scoreboardBody');
+    tbody.innerHTML = '';
+
+    scoreboardData.forEach(player => {
+        const row = document.createElement('tr');
+        if (player.id === myPlayerId) {
+            row.className = 'me';
+        }
+        row.innerHTML = `<td>${player.name}</td><td>${player.kills}</td><td>${player.deaths}</td>`;
+        tbody.appendChild(row);
+    });
 }
 
 function updateMovement() {
