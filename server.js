@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const socketIO = require('socket.io');
 const path = require('path');
+const os = require('os');
 
 const app = express();
 const server = http.createServer(app);
@@ -55,14 +56,15 @@ io.on('connection', (socket) => {
     const newPlayer = {
         id: socket.id,
         name: playerName,
-        position: { 
-            x: Math.random() * 20 - 10, 
-            y: 1, 
-            z: Math.random() * 20 - 10 
+        position: {
+            x: Math.random() * 20 - 10,
+            y: 1,
+            z: Math.random() * 20 - 10
         },
         rotation: { x: 0, y: 0, z: 0 },
         colorScheme: COLOR_PALETTES[playerCount % COLOR_PALETTES.length],
-        hp: 100
+        hp: 100,
+        isDead: false
     };
     
     players[socket.id] = newPlayer;
@@ -103,23 +105,25 @@ io.on('connection', (socket) => {
     
     // Handle player hit
     socket.on('hit', (data) => {
-        if (players[data.playerId]) {
+        if (players[data.playerId] && !players[data.playerId].isDead) {
             players[data.playerId].hp -= data.damage;
-            
+
             // Broadcast HP update to all players
             io.emit('hpUpdate', {
                 playerId: data.playerId,
                 hp: players[data.playerId].hp
             });
-            
+
             // Check if player died
             if (players[data.playerId].hp <= 0) {
+                players[data.playerId].isDead = true;
                 io.emit('playerDied', { playerId: data.playerId });
-                
+
                 // Respawn player after 3 seconds
                 setTimeout(() => {
                     if (players[data.playerId]) {
                         players[data.playerId].hp = 100;
+                        players[data.playerId].isDead = false;
                         players[data.playerId].position = {
                             x: Math.random() * 20 - 10,
                             y: 1,
@@ -144,6 +148,21 @@ io.on('connection', (socket) => {
     });
 });
 
+function getLocalIP() {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name]) {
+            if (iface.family === 'IPv4' && !iface.internal) {
+                return iface.address;
+            }
+        }
+    }
+    return 'localhost';
+}
+
 server.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    const localIP = getLocalIP();
+    console.log(`Server running on:`);
+    console.log(`  Local:   http://localhost:${PORT}`);
+    console.log(`  Network: http://${localIP}:${PORT}`);
 });

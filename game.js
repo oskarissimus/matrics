@@ -21,6 +21,7 @@ const raycaster = new THREE.Raycaster();
 const shootDirection = new THREE.Vector3();
 
 let currentHP = 100;
+let isDead = false;
 
 const bullets = [];
 
@@ -628,6 +629,8 @@ function onMouseDown(event) {
 }
 
 function shoot() {
+    if (isDead) return;
+
     camera.getWorldDirection(shootDirection);
 
     const bulletOrigin = new THREE.Vector3();
@@ -730,6 +733,7 @@ function connectToServer() {
     
     socket.on('playerDied', (data) => {
         if (data.playerId === myPlayerId) {
+            isDead = true;
         } else if (players[data.playerId]) {
             players[data.playerId].mesh.visible = false;
         }
@@ -737,6 +741,7 @@ function connectToServer() {
     
     socket.on('playerRespawn', (data) => {
         if (data.playerId === myPlayerId) {
+            isDead = false;
             camera.position.set(
                 data.position.x,
                 data.position.y,
