@@ -189,7 +189,15 @@ io.on('connection', (socket) => {
     socket.on('requestScoreboard', () => {
         socket.emit('scoreUpdate', getScoreboard());
     });
-    
+
+    socket.on('changeName', (newName) => {
+        const validation = validatePlayerName(newName);
+        if (validation.valid && players[socket.id]) {
+            players[socket.id].name = validation.name;
+            io.emit('playerNameChanged', { id: socket.id, name: validation.name });
+        }
+    });
+
     // Handle disconnection
     socket.on('disconnect', () => {
         console.log('Player disconnected:', socket.id);

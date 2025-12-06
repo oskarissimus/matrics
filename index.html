@@ -272,6 +272,73 @@
       #deathMessage.visible {
         display: block;
       }
+
+      #clickToPlayOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 600;
+        cursor: pointer;
+      }
+
+      #clickToPlayOverlay.hidden {
+        display: none;
+      }
+
+      #usernameDisplay {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 30px;
+      }
+
+      #currentUsername {
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+      }
+
+      #editUsernameBtn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 18px;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      #editUsernameBtn:hover {
+        background: rgba(255, 255, 255, 0.4);
+      }
+
+      #clickToPlayText {
+        color: white;
+        font-size: 36px;
+        font-weight: bold;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+        animation: pulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        50% {
+          opacity: 0.7;
+          transform: scale(1.05);
+        }
+      }
     </style>
   </head>
   <body>
@@ -291,7 +358,7 @@
       </div>
     </div>
 
-    <div id="nameModal">
+    <div id="nameModal" class="hidden">
       <div id="nameModalContent">
         <h2>Enter Your Name</h2>
         <input type="text" id="nameInput" placeholder="Your name (3-20 characters)" maxlength="20" autocomplete="off" />
@@ -301,6 +368,14 @@
     </div>
 
     <div id="deathMessage">YOU DIED</div>
+
+    <div id="clickToPlayOverlay" class="hidden">
+      <div id="usernameDisplay">
+        <span id="currentUsername"></span>
+        <button id="editUsernameBtn" title="Edit name">&#9998;</button>
+      </div>
+      <div id="clickToPlayText">Click to Play</div>
+    </div>
 
     <div id="scoreboard">
       <h2>SCOREBOARD</h2>

@@ -6,6 +6,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 When using voice conversation (converse tool), always respond in Polish.
 
+## Sudo Commands
+
+When a command requires sudo/admin privileges, open an interactive Terminal window with sudo command. This allows Touch ID authentication (osascript's "with administrator privileges" doesn't support Touch ID as it uses Authorization Services which only allows Touch ID for Apple-signed apps).
+
+Example:
+```bash
+osascript <<'EOF'
+tell application "Terminal"
+    activate
+    do script "sudo YOUR_COMMAND_HERE; exit"
+end tell
+EOF
+```
+
 ## Project Overview
 
 Matrics is a browser-based 3D multiplayer FPS game built with Three.js and Socket.IO. Players spawn immediately into the game with no lobby, can move around, shoot each other with pistols, and respawn after death.
@@ -45,7 +59,12 @@ Status: Complete
 
 ## Development Commands
 
-Start the server (runs on http://localhost:3000):
+Development server with hot reload (preferred for development):
+```bash
+npm run dev
+```
+
+Production server (runs on http://localhost:3000):
 ```bash
 npm start
 ```

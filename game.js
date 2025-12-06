@@ -34,6 +34,8 @@ const PLAYER_RADIUS = 0.5;
 
 const STORAGE_KEY = 'matrics_player_name';
 let pendingPlayerName = null;
+let gameStarted = false;
+let isEditingName = false;
 
 // Bullet visual constants
 const BULLET_RADIUS = 0.05;
@@ -104,7 +106,7 @@ function init() {
 
     setupControls();
 
-    showNameModal();
+    initUsername();
 
     window.addEventListener('resize', onWindowResize);
 
@@ -141,34 +143,77 @@ function validatePlayerName(name) {
     return { valid: true, name: trimmedName };
 }
 
-function showNameModal() {
+function initUsername() {
+    const savedName = loadSavedName();
+    const validation = validatePlayerName(savedName);
+
+    hideNameModal();
+
+    if (validation.valid) {
+        pendingPlayerName = validation.name;
+        document.getElementById('currentUsername').textContent = validation.name;
+        showClickToPlayOverlay();
+    } else {
+        showNameModal(false);
+    }
+}
+
+function showNameModal(isEdit = false) {
+    isEditingName = true;
     const modal = document.getElementById('nameModal');
     const input = document.getElementById('nameInput');
     const joinButton = document.getElementById('joinButton');
     const errorDiv = document.getElementById('nameError');
+    const title = modal.querySelector('h2');
 
-    const savedName = loadSavedName();
-    if (savedName) {
-        input.value = savedName;
+    modal.classList.remove('hidden');
+    hideClickToPlayOverlay();
+
+    if (isEdit && myPlayerData) {
+        input.value = myPlayerData.name;
+        title.textContent = 'Change Your Name';
+        joinButton.textContent = 'Save';
+    } else {
+        const savedName = loadSavedName();
+        if (savedName) {
+            input.value = savedName;
+        }
+        title.textContent = 'Enter Your Name';
+        joinButton.textContent = 'Join Game';
     }
 
+    errorDiv.textContent = '';
     input.focus();
 
+    const newJoinButton = joinButton.cloneNode(true);
+    joinButton.parentNode.replaceChild(newJoinButton, joinButton);
+
+    const newInput = input.cloneNode(true);
+    input.parentNode.replaceChild(newInput, input);
+    newInput.value = input.value;
+    newInput.focus();
+
     const handleJoin = () => {
-        const validation = validatePlayerName(input.value);
+        const validation = validatePlayerName(newInput.value);
         if (validation.valid) {
-            errorDiv.textContent = '';
-            pendingPlayerName = validation.name;
+            document.getElementById('nameError').textContent = '';
             saveName(validation.name);
             hideNameModal();
-            connectToServer();
+            isEditingName = false;
+
+            if (isEdit && socket && socket.connected) {
+                socket.emit('changeName', validation.name);
+            } else {
+                pendingPlayerName = validation.name;
+                connectToServer();
+            }
         } else {
-            errorDiv.textContent = validation.error;
+            document.getElementById('nameError').textContent = validation.error;
         }
     };
 
-    joinButton.addEventListener('click', handleJoin);
-    input.addEventListener('keypress', (e) => {
+    newJoinButton.addEventListener('click', handleJoin);
+    newInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             handleJoin();
         }
@@ -178,6 +223,17 @@ function showNameModal() {
 function hideNameModal() {
     const modal = document.getElementById('nameModal');
     modal.classList.add('hidden');
+}
+
+function showClickToPlayOverlay() {
+    if (myPlayerData) {
+        document.getElementById('currentUsername').textContent = myPlayerData.name;
+    }
+    document.getElementById('clickToPlayOverlay').classList.remove('hidden');
+}
+
+function hideClickToPlayOverlay() {
+    document.getElementById('clickToPlayOverlay').classList.add('hidden');
 }
 
 function createMapElements() {
@@ -577,19 +633,38 @@ function updateBullets(deltaTime) {
 function setupControls() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
-    
+
     renderer.domElement.addEventListener('click', () => {
         renderer.domElement.requestPointerLock();
     });
-    
+
     document.addEventListener('pointerlockchange', () => {
         if (document.pointerLockElement === renderer.domElement) {
             document.addEventListener('mousemove', onMouseMove);
             document.addEventListener('mousedown', onMouseDown);
+            hideClickToPlayOverlay();
         } else {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mousedown', onMouseDown);
+            if (gameStarted && !isEditingName) {
+                showClickToPlayOverlay();
+            }
         }
+    });
+
+    document.getElementById('clickToPlayOverlay').addEventListener('click', (e) => {
+        if (e.target.id !== 'editUsernameBtn') {
+            hideClickToPlayOverlay();
+            if (!socket || !socket.connected) {
+                connectToServer();
+            }
+            renderer.domElement.requestPointerLock();
+        }
+    });
+
+    document.getElementById('editUsernameBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showNameModal(!gameStarted);
     });
 }
 
@@ -712,15 +787,16 @@ function connectToServer() {
     socket.on('init', (data) => {
         myPlayerId = data.id;
         myPlayerData = data.playerData;
-        
+        gameStarted = true;
+
         document.getElementById('playerName').textContent = myPlayerData.name;
-        
+
         camera.position.set(
             myPlayerData.position.x,
             myPlayerData.position.y,
             myPlayerData.position.z
         );
-        
+
         for (let id in data.players) {
             if (id !== myPlayerId) {
                 addPlayer(data.players[id]);
@@ -771,7 +847,21 @@ function connectToServer() {
             renderScoreboard();
         }
     });
-    
+
+    socket.on('playerNameChanged', (data) => {
+        if (data.id === myPlayerId) {
+            myPlayerData.name = data.name;
+            document.getElementById('playerName').textContent = data.name;
+            document.getElementById('currentUsername').textContent = data.name;
+        } else if (players[data.id]) {
+            players[data.id].data.name = data.name;
+            const nameTag = players[data.id].mesh.children.find(child => child.isCSS2DObject);
+            if (nameTag) {
+                nameTag.element.textContent = data.name;
+            }
+        }
+    });
+
     socket.on('playerRespawn', (data) => {
         if (data.playerId === myPlayerId) {
             isDead = false;
