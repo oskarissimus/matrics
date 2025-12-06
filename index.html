@@ -125,6 +125,77 @@
         border-radius: 4px;
         white-space: nowrap;
       }
+
+      #nameModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      }
+
+      #nameModal.hidden {
+        display: none;
+      }
+
+      #nameModalContent {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        min-width: 400px;
+      }
+
+      #nameModalContent h2 {
+        margin: 0 0 20px 0;
+        color: #333;
+        font-size: 28px;
+      }
+
+      #nameInput {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+        border: 2px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+        margin-bottom: 10px;
+      }
+
+      #nameInput:focus {
+        outline: none;
+        border-color: #4CAF50;
+      }
+
+      #nameError {
+        color: #f44336;
+        font-size: 14px;
+        margin-bottom: 15px;
+        min-height: 20px;
+      }
+
+      #joinButton {
+        width: 100%;
+        padding: 12px;
+        font-size: 18px;
+        font-weight: bold;
+        background: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      #joinButton:hover {
+        background: #45a049;
+      }
     </style>
   </head>
   <body>
@@ -141,6 +212,15 @@
       <div id="hpText">HP: 100</div>
       <div id="hpBar">
         <div id="hpFill"></div>
+      </div>
+    </div>
+
+    <div id="nameModal">
+      <div id="nameModalContent">
+        <h2>Enter Your Name</h2>
+        <input type="text" id="nameInput" placeholder="Your name (3-20 characters)" maxlength="20" autocomplete="off" />
+        <div id="nameError"></div>
+        <button id="joinButton">Join Game</button>
       </div>
     </div>
 

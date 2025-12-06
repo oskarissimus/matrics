@@ -16,22 +16,52 @@ app.use(express.static(__dirname));
 const players = {};
 let playerCount = 0;
 
-// Handle socket connections
+const COLOR_PALETTES = [
+  { primary: 0xff3333, secondary: 0x3366ff, accent: 0xffcc00 },
+  { primary: 0x00cc66, secondary: 0xff6600, accent: 0x9933ff },
+  { primary: 0x3399ff, secondary: 0xff3399, accent: 0x66ff66 },
+  { primary: 0xff9900, secondary: 0x00ccff, accent: 0xff3366 },
+  { primary: 0xcc33ff, secondary: 0xffcc33, accent: 0x33ff99 },
+  { primary: 0xff6633, secondary: 0x33ffcc, accent: 0x6633ff },
+  { primary: 0x66ff33, secondary: 0xff3399, accent: 0x3366ff },
+  { primary: 0xff3366, secondary: 0x66ff99, accent: 0xffaa00 },
+  { primary: 0x33ccff, secondary: 0xff6633, accent: 0xcc33ff },
+  { primary: 0xffcc00, secondary: 0x00ff99, accent: 0xff0066 }
+];
+
+function validatePlayerName(name) {
+    if (!name || typeof name !== 'string') {
+        return { valid: false };
+    }
+    const trimmedName = name.trim();
+    if (trimmedName.length < 3 || trimmedName.length > 20) {
+        return { valid: false };
+    }
+    const validPattern = /^[a-zA-Z0-9 .,!?'-]+$/;
+    if (!validPattern.test(trimmedName)) {
+        return { valid: false };
+    }
+    return { valid: true, name: trimmedName };
+}
+
 io.on('connection', (socket) => {
     console.log('Player connected:', socket.id);
-    
-    // Create new player
+
+    const clientName = socket.handshake.query.playerName;
+    const validation = validatePlayerName(clientName);
     playerCount++;
+    const playerName = validation.valid ? validation.name : `Player${playerCount}`;
+
     const newPlayer = {
         id: socket.id,
-        name: `Player${playerCount}`,
+        name: playerName,
         position: { 
             x: Math.random() * 20 - 10, 
             y: 1, 
             z: Math.random() * 20 - 10 
         },
         rotation: { x: 0, y: 0, z: 0 },
-        color: Math.floor(Math.random() * 0xffffff),
+        colorScheme: COLOR_PALETTES[playerCount % COLOR_PALETTES.length],
         hp: 100
     };
     
