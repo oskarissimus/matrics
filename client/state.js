@@ -20,7 +20,9 @@ export const inputState = {
     moveLeft: false,
     moveRight: false,
     pitch: 0,
-    yaw: 0
+    yaw: 0,
+    velocityY: 0,
+    isGrounded: true
 };
 
 export const sceneState = {

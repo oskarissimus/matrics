@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sceneState, inputState, networkState, gameState } from '../state.js';
-import { MOVE_SPEED } from '../constants.js';
+import { MOVE_SPEED, GRAVITY, EYE_HEIGHT } from '../constants.js';
 import { checkCollision } from '../map/collision.js';
 
 export function updateMovement() {
@@ -43,6 +43,15 @@ export function updateMovement() {
     }
     if (!checkCollision(sceneState.camera.position.x, newZ)) {
         sceneState.camera.position.z = newZ;
+    }
+
+    inputState.velocityY -= GRAVITY;
+    sceneState.camera.position.y += inputState.velocityY;
+
+    if (sceneState.camera.position.y <= EYE_HEIGHT) {
+        sceneState.camera.position.y = EYE_HEIGHT;
+        inputState.velocityY = 0;
+        inputState.isGrounded = true;
     }
 
     sceneState.camera.rotation.order = 'YXZ';
