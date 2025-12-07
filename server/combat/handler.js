@@ -35,6 +35,7 @@ function handleDeath(io, killerId, victimId) {
         killerId: killerId,
         deathPosition: { ...victim.position },
         victimColorScheme: victim.colorScheme,
+        victimTextureStyle: victim.textureStyle,
         killerPosition: killer ? { ...killer.position } : null
     });
 

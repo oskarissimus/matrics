@@ -1,4 +1,5 @@
 import { gameState, uiState, sceneState, networkState } from '../state.js';
+import { PLAYER_TEXTURE_STYLES } from '../core/texture-generator.js';
 
 export function toggleConsole() {
     gameState.consoleOpen = !gameState.consoleOpen;
@@ -30,8 +31,20 @@ export function handleConsoleCommand(command) {
         }
     } else if (cmd === 'maps') {
         addConsoleOutput('Available maps: ' + Object.keys(MapDefinitions.maps).join(', '));
+    } else if (cmd === 'skin' && parts[1]) {
+        const skinName = parts[1].toLowerCase();
+        if (PLAYER_TEXTURE_STYLES.includes(skinName)) {
+            gameState.playerTextureStyle = skinName;
+            networkState.socket.emit('changeSkin', skinName);
+            addConsoleOutput('Skin changed to: ' + skinName);
+        } else {
+            addConsoleOutput('Unknown skin: ' + skinName + '. Available: ' + PLAYER_TEXTURE_STYLES.join(', '));
+        }
+    } else if (cmd === 'skins') {
+        addConsoleOutput('Available skins: ' + PLAYER_TEXTURE_STYLES.join(', '));
+        addConsoleOutput('Current skin: ' + gameState.playerTextureStyle);
     } else if (cmd === 'help') {
-        addConsoleOutput('Commands: map <name>, maps, help, clear');
+        addConsoleOutput('Commands: map <name>, maps, skin <name>, skins, help, clear');
     } else if (cmd === 'clear') {
         document.getElementById('consoleOutput').innerHTML = '';
     } else if (cmd) {

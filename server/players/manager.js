@@ -3,6 +3,12 @@ const { DEFAULT_HP } = require('../constants.js');
 const { validatePlayerName, isNameTaken } = require('./validation.js');
 const { getSpawnPosition, getColorScheme } = require('./spawning.js');
 
+const TEXTURE_STYLES = ['fabric', 'camo', 'tech', 'organic'];
+
+function getRandomTextureStyle() {
+    return TEXTURE_STYLES[Math.floor(Math.random() * TEXTURE_STYLES.length)];
+}
+
 function createPlayer(socketId, clientName) {
     const validation = validatePlayerName(clientName);
     serverState.playerCount++;
@@ -24,6 +30,7 @@ function createPlayer(socketId, clientName) {
         position: getSpawnPosition(),
         rotation: { x: 0, y: 0, z: 0 },
         colorScheme: getColorScheme(),
+        textureStyle: getRandomTextureStyle(),
         hp: DEFAULT_HP,
         isDead: false,
         kills: 0,

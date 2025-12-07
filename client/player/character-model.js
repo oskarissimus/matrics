@@ -1,29 +1,24 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { getPlayerTexture } from '../core/texture-generator.js';
 
-export function createBlockyCharacter(colorScheme, playerName) {
+function createTexturedMaterial(color, textureStyle, shininess, specular) {
+    const texture = textureStyle ? getPlayerTexture(textureStyle, color) : null;
+    return new THREE.MeshPhongMaterial({
+        color: texture ? 0xffffff : color,
+        map: texture,
+        shininess,
+        specular
+    });
+}
+
+export function createBlockyCharacter(colorScheme, playerName, textureStyle = null) {
     const playerGroup = new THREE.Group();
 
-    const headMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.primary,
-        shininess: 80,
-        specular: 0x444444
-    });
-    const torsoMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.primary,
-        shininess: 20,
-        specular: 0x111111
-    });
-    const armMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.secondary,
-        shininess: 50,
-        specular: 0x333333
-    });
-    const legMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.accent,
-        shininess: 40,
-        specular: 0x222222
-    });
+    const headMaterial = createTexturedMaterial(colorScheme.primary, textureStyle, 80, 0x444444);
+    const torsoMaterial = createTexturedMaterial(colorScheme.primary, textureStyle, 20, 0x111111);
+    const armMaterial = createTexturedMaterial(colorScheme.secondary, textureStyle, 50, 0x333333);
+    const legMaterial = createTexturedMaterial(colorScheme.accent, textureStyle, 40, 0x222222);
 
     const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const headMesh = new THREE.Mesh(headGeo, headMaterial);
@@ -98,32 +93,18 @@ export function createBlockyCharacter(colorScheme, playerName) {
     nameLabel.position.set(0, 2.4, 0);
     playerGroup.add(nameLabel);
 
+    playerGroup.userData.textureStyle = textureStyle;
+
     return playerGroup;
 }
 
-export function createDeadBody(colorScheme) {
+export function createDeadBody(colorScheme, textureStyle = null) {
     const bodyGroup = new THREE.Group();
 
-    const headMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.primary,
-        shininess: 80,
-        specular: 0x444444
-    });
-    const torsoMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.primary,
-        shininess: 20,
-        specular: 0x111111
-    });
-    const armMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.secondary,
-        shininess: 50,
-        specular: 0x333333
-    });
-    const legMaterial = new THREE.MeshPhongMaterial({
-        color: colorScheme.accent,
-        shininess: 40,
-        specular: 0x222222
-    });
+    const headMaterial = createTexturedMaterial(colorScheme.primary, textureStyle, 80, 0x444444);
+    const torsoMaterial = createTexturedMaterial(colorScheme.primary, textureStyle, 20, 0x111111);
+    const armMaterial = createTexturedMaterial(colorScheme.secondary, textureStyle, 50, 0x333333);
+    const legMaterial = createTexturedMaterial(colorScheme.accent, textureStyle, 40, 0x222222);
 
     const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const headMesh = new THREE.Mesh(headGeo, headMaterial);

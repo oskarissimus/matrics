@@ -6,7 +6,8 @@ import { createBlockyCharacter } from './character-model.js';
 const raycaster = new THREE.Raycaster();
 
 export function addPlayer(playerData) {
-    const playerGroup = createBlockyCharacter(playerData.colorScheme, playerData.name);
+    const textureStyle = playerData.textureStyle || 'fabric';
+    const playerGroup = createBlockyCharacter(playerData.colorScheme, playerData.name, textureStyle);
     playerGroup.position.set(
         playerData.position.x,
         playerData.position.y + CHARACTER_Y_OFFSET,
@@ -18,6 +19,25 @@ export function addPlayer(playerData) {
         mesh: playerGroup,
         data: playerData
     };
+}
+
+export function recreatePlayer(playerId) {
+    const playerEntry = entityState.players[playerId];
+    if (!playerEntry) return;
+
+    const oldMesh = playerEntry.mesh;
+    const position = oldMesh.position.clone();
+    const rotation = oldMesh.rotation.clone();
+
+    sceneState.scene.remove(oldMesh);
+
+    const textureStyle = playerEntry.data.textureStyle || 'fabric';
+    const newMesh = createBlockyCharacter(playerEntry.data.colorScheme, playerEntry.data.name, textureStyle);
+    newMesh.position.copy(position);
+    newMesh.rotation.copy(rotation);
+    sceneState.scene.add(newMesh);
+
+    playerEntry.mesh = newMesh;
 }
 
 export function removePlayer(playerId) {

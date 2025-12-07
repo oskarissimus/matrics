@@ -61,6 +61,23 @@ function setupSocketHandlers(io, socket) {
         }
     });
 
+    socket.on('changeSkin', (textureStyle) => {
+        const validStyles = ['fabric', 'camo', 'tech', 'organic'];
+        if (!validStyles.includes(textureStyle)) {
+            socket.emit('consoleMessage', `Unknown skin: ${textureStyle}`);
+            return;
+        }
+
+        const player = getPlayer(socket.id);
+        if (player) {
+            player.textureStyle = textureStyle;
+            io.emit('playerSkinChanged', {
+                playerId: socket.id,
+                textureStyle: textureStyle
+            });
+        }
+    });
+
     socket.on('changeMap', (mapName) => {
         if (!MapDefinitions.maps[mapName]) {
             socket.emit('consoleMessage', `Unknown map: ${mapName}`);

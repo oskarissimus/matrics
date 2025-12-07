@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { networkState, gameState, sceneState, entityState, uiState, inputState } from '../state.js';
 import { HP, CHARACTER_Y_OFFSET, EYE_HEIGHT } from '../constants.js';
 import { loadMap } from '../map/loader.js';
-import { addPlayer, removePlayer } from '../player/remote-players.js';
+import { addPlayer, removePlayer, recreatePlayer } from '../player/remote-players.js';
 import { createBullet } from '../combat/bullets.js';
 import { updateHPDisplay } from '../ui/hud.js';
 import { updateScoreboardVisibility, renderScoreboard } from '../ui/scoreboard.js';
@@ -27,6 +27,7 @@ export function setupSocketEvents() {
     socket.on('consoleMessage', handleConsoleMessage);
     socket.on('playerRespawn', handlePlayerRespawn);
     socket.on('playerLeft', handlePlayerLeft);
+    socket.on('playerSkinChanged', handlePlayerSkinChanged);
 }
 
 function handleInit(data) {
@@ -92,7 +93,8 @@ function handlePlayerDied(data) {
             data.deathPosition.z
         );
 
-        const deadBody = createDeadBody(data.victimColorScheme);
+        const victimTextureStyle = data.victimTextureStyle || gameState.playerTextureStyle;
+        const deadBody = createDeadBody(data.victimColorScheme, victimTextureStyle);
         deadBody.position.copy(deathPosition);
         sceneState.scene.add(deadBody);
 
@@ -141,7 +143,8 @@ function handlePlayerDied(data) {
         const playerEntry = entityState.players[data.playerId];
         playerEntry.mesh.visible = false;
 
-        const deadBody = createDeadBody(playerEntry.data.colorScheme);
+        const textureStyle = playerEntry.data.textureStyle || 'fabric';
+        const deadBody = createDeadBody(playerEntry.data.colorScheme, textureStyle);
         deadBody.position.set(
             data.deathPosition.x,
             0.01,
@@ -149,6 +152,15 @@ function handlePlayerDied(data) {
         );
         sceneState.scene.add(deadBody);
         playerEntry.deadBody = deadBody;
+    }
+}
+
+function handlePlayerSkinChanged(data) {
+    if (data.playerId === gameState.myPlayerId) {
+        gameState.playerTextureStyle = data.textureStyle;
+    } else if (entityState.players[data.playerId]) {
+        entityState.players[data.playerId].data.textureStyle = data.textureStyle;
+        recreatePlayer(data.playerId);
     }
 }
 

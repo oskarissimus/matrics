@@ -254,3 +254,233 @@ export function clearTextureCache() {
     textureCache.forEach(texture => texture.dispose());
     textureCache.clear();
 }
+
+function hexToRgb(hex) {
+    const num = typeof hex === 'number' ? hex : parseInt(hex.replace('#', ''), 16);
+    return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255
+    };
+}
+
+function generateFabricTexture(baseColor, size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const { r, g, b } = hexToRgb(baseColor);
+    const threadSize = 4;
+
+    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    ctx.fillRect(0, 0, size, size);
+
+    for (let y = 0; y < size; y += threadSize) {
+        for (let x = 0; x < size; x += threadSize) {
+            const isHorizontal = (Math.floor(y / threadSize) + Math.floor(x / threadSize)) % 2 === 0;
+            const variation = (Math.random() - 0.5) * 30;
+
+            if (isHorizontal) {
+                ctx.fillStyle = `rgb(${Math.min(255, Math.max(0, r + variation))}, ${Math.min(255, Math.max(0, g + variation))}, ${Math.min(255, Math.max(0, b + variation))})`;
+                ctx.fillRect(x, y, threadSize, threadSize - 1);
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.fillRect(x, y + threadSize - 1, threadSize, 1);
+            } else {
+                ctx.fillStyle = `rgb(${Math.min(255, Math.max(0, r - 15 + variation))}, ${Math.min(255, Math.max(0, g - 15 + variation))}, ${Math.min(255, Math.max(0, b - 15 + variation))})`;
+                ctx.fillRect(x, y, threadSize - 1, threadSize);
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.fillRect(x + threadSize - 1, y, 1, threadSize);
+            }
+        }
+    }
+
+    return canvas;
+}
+
+function generateCamoTexture(baseColor, size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const { r, g, b } = hexToRgb(baseColor);
+    const noise = createNoiseData(size, size);
+    const imageData = ctx.createImageData(size, size);
+
+    const colors = [
+        { r, g, b },
+        { r: Math.max(0, r - 40), g: Math.max(0, g - 40), b: Math.max(0, b - 40) },
+        { r: Math.min(255, r + 30), g: Math.min(255, g + 30), b: Math.min(255, b + 30) },
+        { r: Math.max(0, r - 70), g: Math.max(0, g - 70), b: Math.max(0, b - 70) }
+    ];
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = (y * size + x) * 4;
+
+            const n1 = smoothNoise(noise, size, x * 0.04, y * 0.04);
+            const n2 = smoothNoise(noise, size, x * 0.08 + 50, y * 0.08 + 50) * 0.5;
+            const combined = (n1 + n2) / 1.5;
+
+            let colorIndex;
+            if (combined < 0.25) colorIndex = 0;
+            else if (combined < 0.5) colorIndex = 1;
+            else if (combined < 0.75) colorIndex = 2;
+            else colorIndex = 3;
+
+            const color = colors[colorIndex];
+            const grain = (Math.random() - 0.5) * 10;
+
+            imageData.data[i] = Math.min(255, Math.max(0, color.r + grain));
+            imageData.data[i + 1] = Math.min(255, Math.max(0, color.g + grain));
+            imageData.data[i + 2] = Math.min(255, Math.max(0, color.b + grain));
+            imageData.data[i + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+
+function generateTechTexture(baseColor, size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const { r, g, b } = hexToRgb(baseColor);
+
+    ctx.fillStyle = `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 30)}, ${Math.max(0, b - 30)})`;
+    ctx.fillRect(0, 0, size, size);
+
+    const hexSize = 16;
+    const hexHeight = hexSize * Math.sqrt(3);
+
+    ctx.strokeStyle = `rgba(${Math.min(255, r + 60)}, ${Math.min(255, g + 60)}, ${Math.min(255, b + 60)}, 0.4)`;
+    ctx.lineWidth = 1;
+
+    for (let row = -1; row < size / hexHeight + 1; row++) {
+        for (let col = -1; col < size / (hexSize * 1.5) + 1; col++) {
+            const x = col * hexSize * 1.5;
+            const y = row * hexHeight + (col % 2) * (hexHeight / 2);
+
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const angle = (Math.PI / 3) * i;
+                const hx = x + hexSize * Math.cos(angle);
+                const hy = y + hexSize * Math.sin(angle);
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            if (Math.random() < 0.3) {
+                ctx.fillStyle = `rgba(${Math.min(255, r + 100)}, ${Math.min(255, g + 100)}, ${Math.min(255, b + 100)}, 0.6)`;
+                ctx.beginPath();
+                ctx.arc(x, y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+    }
+
+    ctx.strokeStyle = `rgba(${Math.min(255, r + 80)}, ${Math.min(255, g + 80)}, ${Math.min(255, b + 80)}, 0.5)`;
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 8; i++) {
+        ctx.beginPath();
+        const startX = Math.random() * size;
+        const startY = Math.random() * size;
+        ctx.moveTo(startX, startY);
+
+        let x = startX, y = startY;
+        for (let j = 0; j < 3; j++) {
+            const dir = Math.floor(Math.random() * 4);
+            const len = 10 + Math.random() * 20;
+            if (dir === 0) x += len;
+            else if (dir === 1) x -= len;
+            else if (dir === 2) y += len;
+            else y -= len;
+            ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    return canvas;
+}
+
+function generateOrganicTexture(baseColor, size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const { r, g, b } = hexToRgb(baseColor);
+    const noise = createNoiseData(size, size);
+    const imageData = ctx.createImageData(size, size);
+
+    for (let y = 0; y < size; y++) {
+        for (let x = 0; x < size; x++) {
+            const i = (y * size + x) * 4;
+
+            const n1 = smoothNoise(noise, size, x * 0.06, y * 0.06);
+            const n2 = smoothNoise(noise, size, x * 0.15, y * 0.15) * 0.3;
+            const combined = (n1 + n2) / 1.3;
+
+            const variation = (combined - 0.5) * 25;
+            const pore = Math.random() < 0.02 ? -15 : 0;
+
+            imageData.data[i] = Math.min(255, Math.max(0, r + variation + pore));
+            imageData.data[i + 1] = Math.min(255, Math.max(0, g + variation + pore));
+            imageData.data[i + 2] = Math.min(255, Math.max(0, b + variation + pore));
+            imageData.data[i + 3] = 255;
+        }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+    return canvas;
+}
+
+const playerTextureCache = new Map();
+
+export function getPlayerTexture(style, baseColor) {
+    const colorHex = typeof baseColor === 'number' ? baseColor.toString(16).padStart(6, '0') : baseColor;
+    const cacheKey = `player_${style}_${colorHex}`;
+
+    if (playerTextureCache.has(cacheKey)) {
+        return playerTextureCache.get(cacheKey);
+    }
+
+    let canvas;
+    switch (style) {
+        case 'fabric':
+            canvas = generateFabricTexture(baseColor);
+            break;
+        case 'camo':
+            canvas = generateCamoTexture(baseColor);
+            break;
+        case 'tech':
+            canvas = generateTechTexture(baseColor);
+            break;
+        case 'organic':
+            canvas = generateOrganicTexture(baseColor);
+            break;
+        default:
+            return null;
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    playerTextureCache.set(cacheKey, texture);
+    return texture;
+}
+
+export function clearPlayerTextureCache() {
+    playerTextureCache.forEach(texture => texture.dispose());
+    playerTextureCache.clear();
+}
+
+export const PLAYER_TEXTURE_STYLES = ['fabric', 'camo', 'tech', 'organic'];

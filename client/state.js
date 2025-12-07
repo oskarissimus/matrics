@@ -11,7 +11,8 @@ export const gameState = {
     myPlayerData: null,
     currentHP: HP.MAX,
     pendingPlayerName: null,
-    deathData: null
+    deathData: null,
+    playerTextureStyle: 'fabric'
 };
 
 export const inputState = {
