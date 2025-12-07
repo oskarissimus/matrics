@@ -1,4 +1,4 @@
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const PLAYER_RADIUS = 0.5;
 const DEFAULT_HP = 100;
 const RESPAWN_DELAY = 3000;

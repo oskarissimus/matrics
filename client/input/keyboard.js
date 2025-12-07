@@ -1,6 +1,7 @@
 import { inputState, gameState, networkState } from '../state.js';
 import { toggleConsole } from '../ui/console.js';
 import { updateScoreboardVisibility } from '../ui/scoreboard.js';
+import { JUMP_VELOCITY } from '../constants.js';
 
 export function onKeyDown(event) {
     if (event.code === 'Backquote') {
@@ -31,6 +32,12 @@ export function onKeyDown(event) {
                 networkState.socket.emit('requestScoreboard');
             }
             updateScoreboardVisibility();
+            break;
+        case 'Space':
+            if (inputState.isGrounded) {
+                inputState.velocityY = JUMP_VELOCITY;
+                inputState.isGrounded = false;
+            }
             break;
     }
 }
