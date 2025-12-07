@@ -32,6 +32,14 @@ const obstacleMeshes = [];
 const MAP_BOUNDARY = 48;
 const PLAYER_RADIUS = 0.5;
 
+let currentMapName = 'default';
+let mapElements = [];
+let floorMesh = null;
+let gridHelper = null;
+let consoleOpen = false;
+let consoleHistory = [];
+let consoleHistoryIndex = -1;
+
 const STORAGE_KEY = 'matrics_player_name';
 let pendingPlayerName = null;
 let gameStarted = false;
@@ -87,23 +95,14 @@ function init() {
     directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
 
-    const floorGeometry = new THREE.PlaneGeometry(100, 100);
-    const floorMaterial = new THREE.MeshLambertMaterial({ color: 0x808080 });
-    const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-    floor.rotation.x = -Math.PI / 2;
-    floor.receiveShadow = true;
-    scene.add(floor);
-
-    const gridHelper = new THREE.GridHelper(100, 50, 0x444444, 0x666666);
-    scene.add(gridHelper);
-
-    createMapElements();
+    loadMap('default');
 
     createWeapon();
     
     scene.add(camera);
 
     setupControls();
+    setupConsoleInput();
 
     initUsername();
 
@@ -225,121 +224,174 @@ function hideClickToPlayOverlay() {
     document.getElementById('clickToPlayOverlay').classList.add('hidden');
 }
 
-function createMapElements() {
-    const boundaryMat = new THREE.MeshPhongMaterial({ color: 0x8B4513 });
-    const boundaryHeight = 6;
-    const boundaryThickness = 2;
-    const boundaryLength = 100;
+function toggleConsole() {
+    consoleOpen = !consoleOpen;
+    const consoleEl = document.getElementById('gameConsole');
 
-    const northWall = new THREE.Mesh(
-        new THREE.BoxGeometry(boundaryLength, boundaryHeight, boundaryThickness),
-        boundaryMat
-    );
-    northWall.position.set(0, boundaryHeight / 2, -50);
-    northWall.castShadow = true;
-    northWall.receiveShadow = true;
-    scene.add(northWall);
-    obstacleMeshes.push(northWall);
-    collisionObstacles.push({ x: 0, z: -50, halfW: 50, halfD: 1 });
+    if (consoleOpen) {
+        document.exitPointerLock();
+        consoleEl.classList.add('visible');
+        document.getElementById('consoleInput').focus();
+    } else {
+        consoleEl.classList.remove('visible');
+        if (gameStarted && document.getElementById('clickToPlayOverlay').classList.contains('hidden')) {
+            renderer.domElement.requestPointerLock();
+        }
+    }
+}
 
-    const southWall = new THREE.Mesh(
-        new THREE.BoxGeometry(boundaryLength, boundaryHeight, boundaryThickness),
-        boundaryMat
-    );
-    southWall.position.set(0, boundaryHeight / 2, 50);
-    southWall.castShadow = true;
-    southWall.receiveShadow = true;
-    scene.add(southWall);
-    obstacleMeshes.push(southWall);
-    collisionObstacles.push({ x: 0, z: 50, halfW: 50, halfD: 1 });
+function handleConsoleCommand(command) {
+    const parts = command.trim().split(/\s+/);
+    const cmd = parts[0].toLowerCase();
 
-    const eastWall = new THREE.Mesh(
-        new THREE.BoxGeometry(boundaryThickness, boundaryHeight, boundaryLength),
-        boundaryMat
-    );
-    eastWall.position.set(50, boundaryHeight / 2, 0);
-    eastWall.castShadow = true;
-    eastWall.receiveShadow = true;
-    scene.add(eastWall);
-    obstacleMeshes.push(eastWall);
-    collisionObstacles.push({ x: 50, z: 0, halfW: 1, halfD: 50 });
+    if (cmd === 'map' && parts[1]) {
+        const mapName = parts[1].toLowerCase();
+        if (MapDefinitions.maps[mapName]) {
+            socket.emit('changeMap', mapName);
+            addConsoleOutput('Requesting map change to: ' + mapName);
+        } else {
+            addConsoleOutput('Unknown map: ' + mapName + '. Available: ' + Object.keys(MapDefinitions.maps).join(', '));
+        }
+    } else if (cmd === 'maps') {
+        addConsoleOutput('Available maps: ' + Object.keys(MapDefinitions.maps).join(', '));
+    } else if (cmd === 'help') {
+        addConsoleOutput('Commands: map <name>, maps, help, clear');
+    } else if (cmd === 'clear') {
+        document.getElementById('consoleOutput').innerHTML = '';
+    } else if (cmd) {
+        addConsoleOutput('Unknown command: ' + cmd);
+    }
 
-    const westWall = new THREE.Mesh(
-        new THREE.BoxGeometry(boundaryThickness, boundaryHeight, boundaryLength),
-        boundaryMat
-    );
-    westWall.position.set(-50, boundaryHeight / 2, 0);
-    westWall.castShadow = true;
-    westWall.receiveShadow = true;
-    scene.add(westWall);
-    obstacleMeshes.push(westWall);
-    collisionObstacles.push({ x: -50, z: 0, halfW: 1, halfD: 50 });
+    if (command.trim()) {
+        consoleHistory.unshift(command);
+        consoleHistoryIndex = -1;
+    }
+}
 
-    const towerGeo = new THREE.BoxGeometry(5, 10, 5);
-    const towerMat = new THREE.MeshPhongMaterial({ color: 0x444444 });
-    const tower = new THREE.Mesh(towerGeo, towerMat);
-    tower.position.set(0, 5, 0);
-    tower.castShadow = true;
-    tower.receiveShadow = true;
-    scene.add(tower);
-    obstacleMeshes.push(tower);
-    collisionObstacles.push({ x: 0, z: 0, halfW: 2.5, halfD: 2.5 });
+function addConsoleOutput(text) {
+    const output = document.getElementById('consoleOutput');
+    const line = document.createElement('div');
+    line.textContent = text;
+    output.appendChild(line);
+    output.scrollTop = output.scrollHeight;
+}
 
-    const bunkerGeo = new THREE.BoxGeometry(3, 3, 3);
-    const bunkerMat = new THREE.MeshPhongMaterial({ color: 0xFF6633 });
-    const bunkerPositions = [
-        [25, 1.5, 25],
-        [-25, 1.5, 25],
-        [25, 1.5, -25],
-        [-25, 1.5, -25]
-    ];
-    bunkerPositions.forEach(pos => {
-        const bunker = new THREE.Mesh(bunkerGeo, bunkerMat);
-        bunker.position.set(pos[0], pos[1], pos[2]);
-        bunker.castShadow = true;
-        bunker.receiveShadow = true;
-        scene.add(bunker);
-        obstacleMeshes.push(bunker);
-        collisionObstacles.push({ x: pos[0], z: pos[2], halfW: 1.5, halfD: 1.5 });
+function setupConsoleInput() {
+    const input = document.getElementById('consoleInput');
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            handleConsoleCommand(input.value);
+            input.value = '';
+        } else if (e.key === 'Escape' || e.code === 'Backquote') {
+            e.preventDefault();
+            toggleConsole();
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (consoleHistory.length > 0 && consoleHistoryIndex < consoleHistory.length - 1) {
+                consoleHistoryIndex++;
+                input.value = consoleHistory[consoleHistoryIndex];
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (consoleHistoryIndex > 0) {
+                consoleHistoryIndex--;
+                input.value = consoleHistory[consoleHistoryIndex];
+            } else if (consoleHistoryIndex === 0) {
+                consoleHistoryIndex = -1;
+                input.value = '';
+            }
+        }
+        e.stopPropagation();
+    });
+}
+
+function loadMap(mapName) {
+    const mapDef = MapDefinitions.maps[mapName];
+    if (!mapDef) return false;
+
+    clearMapElements();
+    createFloor(mapDef.floor);
+
+    mapDef.elements.forEach(element => {
+        createMapElement(element);
     });
 
-    const wallMat = new THREE.MeshPhongMaterial({ color: 0x2C5AA0 });
-    const wall1Geo = new THREE.BoxGeometry(1.5, 4, 20);
-    const wall1 = new THREE.Mesh(wall1Geo, wallMat);
-    wall1.position.set(15, 2, 0);
-    wall1.castShadow = true;
-    wall1.receiveShadow = true;
-    scene.add(wall1);
-    obstacleMeshes.push(wall1);
-    collisionObstacles.push({ x: 15, z: 0, halfW: 0.75, halfD: 10 });
+    currentMapName = mapName;
+    return true;
+}
 
-    const wall2Geo = new THREE.BoxGeometry(20, 4, 1.5);
-    const wall2 = new THREE.Mesh(wall2Geo, wallMat);
-    wall2.position.set(0, 2, 15);
-    wall2.castShadow = true;
-    wall2.receiveShadow = true;
-    scene.add(wall2);
-    obstacleMeshes.push(wall2);
-    collisionObstacles.push({ x: 0, z: 15, halfW: 10, halfD: 0.75 });
+function clearMapElements() {
+    mapElements.forEach(mesh => {
+        scene.remove(mesh);
+        if (mesh.geometry) mesh.geometry.dispose();
+        if (mesh.material) mesh.material.dispose();
+    });
+    mapElements = [];
 
-    const rampMat = new THREE.MeshPhongMaterial({ color: 0x33DD99 });
-    const ramp1Geo = new THREE.BoxGeometry(3, 0.5, 6);
-    const ramp1 = new THREE.Mesh(ramp1Geo, rampMat);
-    ramp1.position.set(-20, 1, -20);
-    ramp1.rotation.x = Math.PI / 6;
-    ramp1.castShadow = true;
-    ramp1.receiveShadow = true;
-    scene.add(ramp1);
-    obstacleMeshes.push(ramp1);
+    if (floorMesh) {
+        scene.remove(floorMesh);
+        floorMesh.geometry.dispose();
+        floorMesh.material.dispose();
+        floorMesh = null;
+    }
 
-    const ramp2Geo = new THREE.BoxGeometry(3, 0.5, 6);
-    const ramp2 = new THREE.Mesh(ramp2Geo, rampMat);
-    ramp2.position.set(20, 1.5, -20);
-    ramp2.rotation.x = Math.PI / 6;
-    ramp2.castShadow = true;
-    ramp2.receiveShadow = true;
-    scene.add(ramp2);
-    obstacleMeshes.push(ramp2);
+    if (gridHelper) {
+        scene.remove(gridHelper);
+        gridHelper = null;
+    }
+
+    obstacleMeshes.length = 0;
+    collisionObstacles.length = 0;
+}
+
+function createFloor(floorDef) {
+    const floorGeometry = new THREE.PlaneGeometry(floorDef.size, floorDef.size);
+    const floorMaterial = new THREE.MeshLambertMaterial({ color: floorDef.color });
+    floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
+    floorMesh.rotation.x = -Math.PI / 2;
+    floorMesh.receiveShadow = true;
+    scene.add(floorMesh);
+
+    gridHelper = new THREE.GridHelper(floorDef.size, floorDef.gridDivisions, floorDef.gridColor1, floorDef.gridColor2);
+    scene.add(gridHelper);
+}
+
+function createMapElement(elementDef) {
+    let geometry, mesh;
+
+    if (elementDef.type === 'box') {
+        geometry = new THREE.BoxGeometry(
+            elementDef.geometry.width,
+            elementDef.geometry.height,
+            elementDef.geometry.depth
+        );
+    }
+
+    const material = new THREE.MeshPhongMaterial({ color: elementDef.material.color });
+    mesh = new THREE.Mesh(geometry, material);
+
+    mesh.position.set(elementDef.position.x, elementDef.position.y, elementDef.position.z);
+    if (elementDef.rotation) {
+        mesh.rotation.set(
+            elementDef.rotation.x || 0,
+            elementDef.rotation.y || 0,
+            elementDef.rotation.z || 0
+        );
+    }
+
+    mesh.castShadow = elementDef.castShadow !== false;
+    mesh.receiveShadow = elementDef.receiveShadow !== false;
+
+    scene.add(mesh);
+    mapElements.push(mesh);
+    obstacleMeshes.push(mesh);
+
+    if (elementDef.collision && !elementDef.noCollision) {
+        collisionObstacles.push(elementDef.collision);
+    }
+
+    return mesh;
 }
 
 function checkCollision(newX, newZ) {
@@ -684,6 +736,14 @@ function setupControls() {
 }
 
 function onKeyDown(event) {
+    if (event.code === 'Backquote') {
+        event.preventDefault();
+        toggleConsole();
+        return;
+    }
+
+    if (consoleOpen) return;
+
     switch (event.code) {
         case 'KeyW':
             moveForward = true;
@@ -744,7 +804,7 @@ function onMouseDown(event) {
 }
 
 function shoot() {
-    if (isDead) return;
+    if (isDead || consoleOpen) return;
 
     camera.getWorldDirection(shootDirection);
 
@@ -805,6 +865,10 @@ function connectToServer() {
         gameStarted = true;
 
         document.getElementById('playerName').textContent = myPlayerData.name;
+
+        if (data.currentMap && data.currentMap !== currentMapName) {
+            loadMap(data.currentMap);
+        }
 
         camera.position.set(
             myPlayerData.position.x,
@@ -875,6 +939,20 @@ function connectToServer() {
                 nameTag.element.textContent = data.name;
             }
         }
+    });
+
+    socket.on('mapChange', (data) => {
+        addConsoleOutput('Map changed to: ' + data.mapName);
+        loadMap(data.mapName);
+        camera.position.set(data.position.x, data.position.y, data.position.z);
+        currentHP = 100;
+        isDead = false;
+        updateHPDisplay();
+        updateScoreboardVisibility();
+    });
+
+    socket.on('consoleMessage', (message) => {
+        addConsoleOutput(message);
     });
 
     socket.on('playerRespawn', (data) => {

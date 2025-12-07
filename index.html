@@ -301,6 +301,60 @@
         display: none !important;
       }
 
+      #gameConsole {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 40%;
+        background: rgba(0, 0, 0, 0.9);
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #00ff00;
+        display: none;
+        flex-direction: column;
+        z-index: 700;
+        border-bottom: 2px solid #00ff00;
+      }
+
+      #gameConsole.visible {
+        display: flex;
+      }
+
+      #consoleOutput {
+        flex: 1;
+        overflow-y: auto;
+        padding: 10px;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+      }
+
+      #consoleOutput div {
+        margin-bottom: 2px;
+      }
+
+      #consoleInputLine {
+        display: flex;
+        padding: 5px 10px;
+        background: rgba(0, 50, 0, 0.5);
+        border-top: 1px solid #00aa00;
+      }
+
+      #consolePrompt {
+        color: #00ff00;
+        margin-right: 5px;
+      }
+
+      #consoleInput {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #00ff00;
+        font-family: inherit;
+        font-size: inherit;
+      }
+
       #clickToPlayText {
         color: white;
         font-size: 36px;
@@ -329,7 +383,8 @@
         WASD - Move<br />
         Mouse - Look<br />
         Click - Shoot<br />
-        ESC - Release pointer
+        ESC - Release pointer<br />
+        ~ - Console
       </div>
       <div id="crosshair"></div>
       <div id="hpText">HP: 100</div>
@@ -366,9 +421,18 @@
       </table>
     </div>
 
+    <div id="gameConsole">
+      <div id="consoleOutput"></div>
+      <div id="consoleInputLine">
+        <span id="consolePrompt">] </span>
+        <input type="text" id="consoleInput" autocomplete="off" spellcheck="false" />
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.140.0/examples/js/renderers/CSS2DRenderer.js"></script>
     <script src="/socket.io/socket.io.js"></script>
+    <script src="maps.js"></script>
     <script src="game.js"></script>
   </body>
 </html>

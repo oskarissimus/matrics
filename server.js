@@ -3,6 +3,7 @@ const http = require('http');
 const socketIO = require('socket.io');
 const path = require('path');
 const os = require('os');
+const MapDefinitions = require('./maps.js');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,24 +15,18 @@ app.use(express.static(__dirname));
 
 const players = {};
 let playerCount = 0;
+let currentMap = 'default';
 
 const PLAYER_RADIUS = 0.5;
-const collisionObstacles = [
-    { x: 0, z: -50, halfW: 50, halfD: 1 },
-    { x: 0, z: 50, halfW: 50, halfD: 1 },
-    { x: 50, z: 0, halfW: 1, halfD: 50 },
-    { x: -50, z: 0, halfW: 1, halfD: 50 },
-    { x: 0, z: 0, halfW: 2.5, halfD: 2.5 },
-    { x: 25, z: 25, halfW: 1.5, halfD: 1.5 },
-    { x: -25, z: 25, halfW: 1.5, halfD: 1.5 },
-    { x: 25, z: -25, halfW: 1.5, halfD: 1.5 },
-    { x: -25, z: -25, halfW: 1.5, halfD: 1.5 },
-    { x: 15, z: 0, halfW: 0.75, halfD: 10 },
-    { x: 0, z: 15, halfW: 10, halfD: 0.75 }
-];
+
+function getCollisionObstacles() {
+    const mapDef = MapDefinitions.maps[currentMap];
+    return mapDef ? mapDef.collisionData : [];
+}
 
 function checkCollision(x, z) {
-    for (const obs of collisionObstacles) {
+    const obstacles = getCollisionObstacles();
+    for (const obs of obstacles) {
         const dx = Math.abs(x - obs.x);
         const dz = Math.abs(z - obs.z);
         if (dx < obs.halfW + PLAYER_RADIUS && dz < obs.halfD + PLAYER_RADIUS) {
@@ -42,14 +37,17 @@ function checkCollision(x, z) {
 }
 
 function getSpawnPosition() {
+    const mapDef = MapDefinitions.maps[currentMap];
+    const spawnArea = mapDef ? mapDef.spawnArea : { minX: -40, maxX: 40, minZ: -40, maxZ: 40 };
+
     let x, z;
     let attempts = 0;
     do {
-        x = Math.random() * 80 - 40;
-        z = Math.random() * 80 - 40;
+        x = Math.random() * (spawnArea.maxX - spawnArea.minX) + spawnArea.minX;
+        z = Math.random() * (spawnArea.maxZ - spawnArea.minZ) + spawnArea.minZ;
         attempts++;
     } while (checkCollision(x, z) && attempts < 100);
-    return { x, y: 1, z };
+    return { x, y: 1.6, z };
 }
 
 const COLOR_PALETTES = [
@@ -111,11 +109,11 @@ io.on('connection', (socket) => {
     
     players[socket.id] = newPlayer;
     
-    // Send current player data to the new player
     socket.emit('init', {
         id: socket.id,
         players: players,
-        playerData: newPlayer
+        playerData: newPlayer,
+        currentMap: currentMap
     });
     
     // Notify other players about the new player
@@ -195,6 +193,29 @@ io.on('connection', (socket) => {
         if (validation.valid && players[socket.id]) {
             players[socket.id].name = validation.name;
             io.emit('playerNameChanged', { id: socket.id, name: validation.name });
+        }
+    });
+
+    socket.on('changeMap', (mapName) => {
+        if (!MapDefinitions.maps[mapName]) {
+            socket.emit('consoleMessage', `Unknown map: ${mapName}`);
+            return;
+        }
+
+        currentMap = mapName;
+        console.log(`Map changed to: ${mapName} by ${players[socket.id]?.name || socket.id}`);
+
+        for (let playerId in players) {
+            players[playerId].position = getSpawnPosition();
+            players[playerId].hp = 100;
+            players[playerId].isDead = false;
+        }
+
+        for (let playerId in players) {
+            io.to(playerId).emit('mapChange', {
+                mapName: mapName,
+                position: players[playerId].position
+            });
         }
     });
 
