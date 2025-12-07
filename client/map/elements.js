@@ -1,16 +1,30 @@
 import * as THREE from 'three';
 import { sceneState, entityState } from '../state.js';
+import { getTexture } from '../core/texture-generator.js';
 
 export function createFloor(floorDef) {
     const floorGeometry = new THREE.PlaneGeometry(floorDef.size, floorDef.size);
-    const floorMaterial = new THREE.MeshLambertMaterial({ color: floorDef.color });
+
+    const materialOptions = { color: floorDef.color };
+
+    if (floorDef.textureType) {
+        const repeatScale = floorDef.size / 10;
+        const texture = getTexture(floorDef.textureType, repeatScale, repeatScale);
+        if (texture) {
+            materialOptions.map = texture;
+        }
+    }
+
+    const floorMaterial = new THREE.MeshLambertMaterial(materialOptions);
     sceneState.floorMesh = new THREE.Mesh(floorGeometry, floorMaterial);
     sceneState.floorMesh.rotation.x = -Math.PI / 2;
     sceneState.floorMesh.receiveShadow = true;
     sceneState.scene.add(sceneState.floorMesh);
 
-    sceneState.gridHelper = new THREE.GridHelper(floorDef.size, floorDef.gridDivisions, floorDef.gridColor1, floorDef.gridColor2);
-    sceneState.scene.add(sceneState.gridHelper);
+    if (!floorDef.hideGrid) {
+        sceneState.gridHelper = new THREE.GridHelper(floorDef.size, floorDef.gridDivisions, floorDef.gridColor1, floorDef.gridColor2);
+        sceneState.scene.add(sceneState.gridHelper);
+    }
 }
 
 export function createMapElement(elementDef) {
@@ -24,7 +38,24 @@ export function createMapElement(elementDef) {
         );
     }
 
-    const material = new THREE.MeshPhongMaterial({ color: elementDef.material.color });
+    const materialOptions = { color: elementDef.material.color };
+
+    if (elementDef.material.textureType) {
+        let repeatX = 1, repeatY = 1;
+
+        if (elementDef.type === 'box') {
+            const maxDim = Math.max(elementDef.geometry.width, elementDef.geometry.depth);
+            repeatX = maxDim / 8;
+            repeatY = elementDef.geometry.height / 4;
+        }
+
+        const texture = getTexture(elementDef.material.textureType, repeatX, repeatY);
+        if (texture) {
+            materialOptions.map = texture;
+        }
+    }
+
+    const material = new THREE.MeshPhongMaterial(materialOptions);
     mesh = new THREE.Mesh(geometry, material);
 
     mesh.position.set(elementDef.position.x, elementDef.position.y, elementDef.position.z);
