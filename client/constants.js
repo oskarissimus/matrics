@@ -3,7 +3,7 @@ export const MOUSE_SENSITIVITY = 0.002;
 export const PLAYER_RADIUS = 0.5;
 export const MAP_BOUNDARY = 48;
 export const EYE_HEIGHT = 1.6;
-export const CHARACTER_Y_OFFSET = -1.0;
+export const CHARACTER_Y_OFFSET = -1.6;
 export const DAMAGE_PER_HIT = 25;
 export const RESPAWN_DELAY = 3000;
 
@@ -50,4 +50,11 @@ export const LIGHTING = {
     DIRECTIONAL_INTENSITY: 0.8,
     SHADOW_MAP_SIZE: 2048,
     SHADOW_CAMERA_SIZE: 50
+};
+
+export const LABEL = {
+    BASE_DISTANCE: 10,
+    MAX_SCALE: 1.5,
+    FADE_START_DISTANCE: 30,
+    FADE_END_DISTANCE: 50
 };

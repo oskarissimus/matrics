@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { sceneState, entityState, gameState } from '../state.js';
-import { CHARACTER_Y_OFFSET } from '../constants.js';
+import { CHARACTER_Y_OFFSET, LABEL } from '../constants.js';
 import { createBlockyCharacter } from './character-model.js';
 
 const raycaster = new THREE.Raycaster();
@@ -23,6 +23,9 @@ export function addPlayer(playerData) {
 export function removePlayer(playerId) {
     if (entityState.players[playerId]) {
         sceneState.scene.remove(entityState.players[playerId].mesh);
+        if (entityState.players[playerId].deadBody) {
+            sceneState.scene.remove(entityState.players[playerId].deadBody);
+        }
         delete entityState.players[playerId];
     }
 }
@@ -59,6 +62,20 @@ export function updateLabelVisibility() {
 
         const hits = raycaster.intersectObjects(entityState.obstacleMeshes, false);
 
-        nameLabel.element.style.display = hits.length > 0 ? 'none' : '';
+        if (hits.length > 0 || distance >= LABEL.FADE_END_DISTANCE) {
+            nameLabel.element.style.display = 'none';
+        } else {
+            nameLabel.element.style.display = '';
+            const scale = Math.min(LABEL.MAX_SCALE, LABEL.BASE_DISTANCE / distance);
+            const baseFontSize = 14;
+            nameLabel.element.style.fontSize = (baseFontSize * scale) + 'px';
+
+            if (distance > LABEL.FADE_START_DISTANCE) {
+                const fadeProgress = (distance - LABEL.FADE_START_DISTANCE) / (LABEL.FADE_END_DISTANCE - LABEL.FADE_START_DISTANCE);
+                nameLabel.element.style.opacity = 1 - fadeProgress;
+            } else {
+                nameLabel.element.style.opacity = 1;
+            }
+        }
     }
 }
