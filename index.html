@@ -126,77 +126,6 @@
         white-space: nowrap;
       }
 
-      #nameModal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
-      }
-
-      #nameModal.hidden {
-        display: none;
-      }
-
-      #nameModalContent {
-        background: white;
-        padding: 40px;
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-        text-align: center;
-        min-width: 400px;
-      }
-
-      #nameModalContent h2 {
-        margin: 0 0 20px 0;
-        color: #333;
-        font-size: 28px;
-      }
-
-      #nameInput {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        border: 2px solid #ccc;
-        border-radius: 5px;
-        box-sizing: border-box;
-        margin-bottom: 10px;
-      }
-
-      #nameInput:focus {
-        outline: none;
-        border-color: #4CAF50;
-      }
-
-      #nameError {
-        color: #f44336;
-        font-size: 14px;
-        margin-bottom: 15px;
-        min-height: 20px;
-      }
-
-      #joinButton {
-        width: 100%;
-        padding: 12px;
-        font-size: 18px;
-        font-weight: bold;
-        background: #4CAF50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background 0.3s;
-      }
-
-      #joinButton:hover {
-        background: #45a049;
-      }
-
       #scoreboard {
         position: fixed;
         top: 50%;
@@ -321,6 +250,57 @@
         background: rgba(255, 255, 255, 0.4);
       }
 
+      #saveUsernameBtn, #cancelUsernameBtn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        font-size: 18px;
+        padding: 8px 12px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      #saveUsernameBtn:hover {
+        background: rgba(76, 175, 80, 0.6);
+      }
+
+      #cancelUsernameBtn:hover {
+        background: rgba(244, 67, 54, 0.6);
+      }
+
+      #inlineNameInput {
+        background: rgba(255, 255, 255, 0.2);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        color: white;
+        font-size: 24px;
+        font-weight: bold;
+        padding: 4px 8px;
+        border-radius: 5px;
+        width: 200px;
+        text-align: center;
+        outline: none;
+      }
+
+      #inlineNameInput:focus {
+        border-color: rgba(255, 255, 255, 0.8);
+      }
+
+      #inlineNameInput.error {
+        border-color: #ff4444;
+        animation: shake 0.3s ease-in-out;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
       #clickToPlayText {
         color: white;
         font-size: 36px;
@@ -358,21 +338,15 @@
       </div>
     </div>
 
-    <div id="nameModal" class="hidden">
-      <div id="nameModalContent">
-        <h2>Enter Your Name</h2>
-        <input type="text" id="nameInput" placeholder="Your name (3-20 characters)" maxlength="20" autocomplete="off" />
-        <div id="nameError"></div>
-        <button id="joinButton">Join Game</button>
-      </div>
-    </div>
-
     <div id="deathMessage">YOU DIED</div>
 
     <div id="clickToPlayOverlay" class="hidden">
       <div id="usernameDisplay">
         <span id="currentUsername"></span>
+        <input type="text" id="inlineNameInput" class="hidden" maxlength="20" autocomplete="off" placeholder="Your name" />
         <button id="editUsernameBtn" title="Edit name">&#9998;</button>
+        <button id="saveUsernameBtn" class="hidden" title="Save">&#10003;</button>
+        <button id="cancelUsernameBtn" class="hidden" title="Cancel">&#10005;</button>
       </div>
       <div id="clickToPlayText">Click to Play</div>
     </div>

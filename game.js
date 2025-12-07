@@ -35,7 +35,6 @@ const PLAYER_RADIUS = 0.5;
 const STORAGE_KEY = 'matrics_player_name';
 let pendingPlayerName = null;
 let gameStarted = false;
-let isEditingName = false;
 
 // Bullet visual constants
 const BULLET_RADIUS = 0.05;
@@ -143,86 +142,76 @@ function validatePlayerName(name) {
     return { valid: true, name: trimmedName };
 }
 
-function initUsername() {
-    const savedName = loadSavedName();
-    const validation = validatePlayerName(savedName);
+function generateDefaultName() {
+    return 'Guest' + Math.floor(1000 + Math.random() * 9000);
+}
 
-    hideNameModal();
+function initUsername() {
+    let savedName = loadSavedName();
+    let validation = validatePlayerName(savedName);
+
+    if (!validation.valid) {
+        savedName = generateDefaultName();
+        saveName(savedName);
+        validation = { valid: true, name: savedName };
+    }
+
+    pendingPlayerName = validation.name;
+    document.getElementById('currentUsername').textContent = validation.name;
+    showClickToPlayOverlay();
+}
+
+function startInlineEdit() {
+    const username = document.getElementById('currentUsername');
+    const input = document.getElementById('inlineNameInput');
+    const editBtn = document.getElementById('editUsernameBtn');
+    const saveBtn = document.getElementById('saveUsernameBtn');
+    const cancelBtn = document.getElementById('cancelUsernameBtn');
+
+    input.value = username.textContent;
+    username.classList.add('hidden');
+    editBtn.classList.add('hidden');
+    input.classList.remove('hidden');
+    saveBtn.classList.remove('hidden');
+    cancelBtn.classList.remove('hidden');
+    input.focus();
+    input.select();
+}
+
+function saveInlineEdit() {
+    const input = document.getElementById('inlineNameInput');
+    const validation = validatePlayerName(input.value);
 
     if (validation.valid) {
-        pendingPlayerName = validation.name;
+        saveName(validation.name);
         document.getElementById('currentUsername').textContent = validation.name;
-        showClickToPlayOverlay();
-    } else {
-        showNameModal(false);
-    }
-}
 
-function showNameModal(isEdit = false) {
-    isEditingName = true;
-    const modal = document.getElementById('nameModal');
-    const input = document.getElementById('nameInput');
-    const joinButton = document.getElementById('joinButton');
-    const errorDiv = document.getElementById('nameError');
-    const title = modal.querySelector('h2');
-
-    modal.classList.remove('hidden');
-    hideClickToPlayOverlay();
-
-    if (isEdit && myPlayerData) {
-        input.value = myPlayerData.name;
-        title.textContent = 'Change Your Name';
-        joinButton.textContent = 'Save';
-    } else {
-        const savedName = loadSavedName();
-        if (savedName) {
-            input.value = savedName;
-        }
-        title.textContent = 'Enter Your Name';
-        joinButton.textContent = 'Join Game';
-    }
-
-    errorDiv.textContent = '';
-    input.focus();
-
-    const newJoinButton = joinButton.cloneNode(true);
-    joinButton.parentNode.replaceChild(newJoinButton, joinButton);
-
-    const newInput = input.cloneNode(true);
-    input.parentNode.replaceChild(newInput, input);
-    newInput.value = input.value;
-    newInput.focus();
-
-    const handleJoin = () => {
-        const validation = validatePlayerName(newInput.value);
-        if (validation.valid) {
-            document.getElementById('nameError').textContent = '';
-            saveName(validation.name);
-            hideNameModal();
-            isEditingName = false;
-
-            if (isEdit && socket && socket.connected) {
-                socket.emit('changeName', validation.name);
-            } else {
-                pendingPlayerName = validation.name;
-                connectToServer();
-            }
+        if (socket && socket.connected) {
+            socket.emit('changeName', validation.name);
         } else {
-            document.getElementById('nameError').textContent = validation.error;
+            pendingPlayerName = validation.name;
         }
-    };
 
-    newJoinButton.addEventListener('click', handleJoin);
-    newInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            handleJoin();
-        }
-    });
+        cancelInlineEdit();
+    } else {
+        input.classList.add('error');
+        setTimeout(() => input.classList.remove('error'), 500);
+    }
 }
 
-function hideNameModal() {
-    const modal = document.getElementById('nameModal');
-    modal.classList.add('hidden');
+function cancelInlineEdit() {
+    const username = document.getElementById('currentUsername');
+    const input = document.getElementById('inlineNameInput');
+    const editBtn = document.getElementById('editUsernameBtn');
+    const saveBtn = document.getElementById('saveUsernameBtn');
+    const cancelBtn = document.getElementById('cancelUsernameBtn');
+
+    username.classList.remove('hidden');
+    editBtn.classList.remove('hidden');
+    input.classList.add('hidden');
+    saveBtn.classList.add('hidden');
+    cancelBtn.classList.add('hidden');
+    input.classList.remove('error');
 }
 
 function showClickToPlayOverlay() {
@@ -646,14 +635,16 @@ function setupControls() {
         } else {
             document.removeEventListener('mousemove', onMouseMove);
             document.removeEventListener('mousedown', onMouseDown);
-            if (gameStarted && !isEditingName) {
+            if (gameStarted) {
                 showClickToPlayOverlay();
             }
         }
     });
 
     document.getElementById('clickToPlayOverlay').addEventListener('click', (e) => {
-        if (e.target.id !== 'editUsernameBtn') {
+        const clickedId = e.target.id;
+        const ignoreIds = ['editUsernameBtn', 'saveUsernameBtn', 'cancelUsernameBtn', 'inlineNameInput'];
+        if (!ignoreIds.includes(clickedId)) {
             hideClickToPlayOverlay();
             if (!socket || !socket.connected) {
                 connectToServer();
@@ -664,7 +655,31 @@ function setupControls() {
 
     document.getElementById('editUsernameBtn').addEventListener('click', (e) => {
         e.stopPropagation();
-        showNameModal(!gameStarted);
+        startInlineEdit();
+    });
+
+    document.getElementById('saveUsernameBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        saveInlineEdit();
+    });
+
+    document.getElementById('cancelUsernameBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        cancelInlineEdit();
+    });
+
+    document.getElementById('inlineNameInput').addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') {
+            saveInlineEdit();
+        }
+        if (e.key === 'Escape') {
+            cancelInlineEdit();
+        }
+    });
+
+    document.getElementById('inlineNameInput').addEventListener('click', (e) => {
+        e.stopPropagation();
     });
 }
 
