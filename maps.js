@@ -128,6 +128,230 @@
                         noCollision: true
                     }
                 ]
+            },
+            dust2_mini: {
+                name: 'dust2_mini',
+                displayName: 'Dust 2 Mini',
+                floorSize: 100,
+                mapBoundary: 48,
+                spawnArea: { minX: -40, maxX: 40, minZ: -40, maxZ: 40 },
+                floor: {
+                    size: 100,
+                    color: 0xC4A76C,
+                    gridDivisions: 50,
+                    gridColor1: 0xA08050,
+                    gridColor2: 0xB09060
+                },
+                collisionData: [
+                    { x: 0, z: -50, halfW: 50, halfD: 1 },
+                    { x: 0, z: 50, halfW: 50, halfD: 1 },
+                    { x: 50, z: 0, halfW: 1, halfD: 50 },
+                    { x: -50, z: 0, halfW: 1, halfD: 50 },
+                    { x: -30, z: -20, halfW: 5, halfD: 10 },
+                    { x: -30, z: 20, halfW: 5, halfD: 10 },
+                    { x: 30, z: -20, halfW: 5, halfD: 10 },
+                    { x: 30, z: 20, halfW: 5, halfD: 10 },
+                    { x: 0, z: 0, halfW: 3, halfD: 3 },
+                    { x: -15, z: -35, halfW: 8, halfD: 1 },
+                    { x: 15, z: -35, halfW: 8, halfD: 1 },
+                    { x: -15, z: 35, halfW: 8, halfD: 1 },
+                    { x: 15, z: 35, halfW: 8, halfD: 1 },
+                    { x: 0, z: -20, halfW: 1, halfD: 8 },
+                    { x: 0, z: 20, halfW: 1, halfD: 8 },
+                    { x: -40, z: 0, halfW: 1, halfD: 15 },
+                    { x: 40, z: 0, halfW: 1, halfD: 15 }
+                ],
+                elements: [
+                    {
+                        type: 'box',
+                        geometry: { width: 100, height: 8, depth: 2 },
+                        material: { color: 0x8B7355 },
+                        position: { x: 0, y: 4, z: -50 },
+                        collision: { x: 0, z: -50, halfW: 50, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 100, height: 8, depth: 2 },
+                        material: { color: 0x8B7355 },
+                        position: { x: 0, y: 4, z: 50 },
+                        collision: { x: 0, z: 50, halfW: 50, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 8, depth: 100 },
+                        material: { color: 0x8B7355 },
+                        position: { x: 50, y: 4, z: 0 },
+                        collision: { x: 50, z: 0, halfW: 1, halfD: 50 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 8, depth: 100 },
+                        material: { color: 0x8B7355 },
+                        position: { x: -50, y: 4, z: 0 },
+                        collision: { x: -50, z: 0, halfW: 1, halfD: 50 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 10, height: 6, depth: 20 },
+                        material: { color: 0x9C8B6E },
+                        position: { x: -30, y: 3, z: -20 },
+                        collision: { x: -30, z: -20, halfW: 5, halfD: 10 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 10, height: 6, depth: 20 },
+                        material: { color: 0x9C8B6E },
+                        position: { x: -30, y: 3, z: 20 },
+                        collision: { x: -30, z: 20, halfW: 5, halfD: 10 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 10, height: 6, depth: 20 },
+                        material: { color: 0x9C8B6E },
+                        position: { x: 30, y: 3, z: -20 },
+                        collision: { x: 30, z: -20, halfW: 5, halfD: 10 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 10, height: 6, depth: 20 },
+                        material: { color: 0x9C8B6E },
+                        position: { x: 30, y: 3, z: 20 },
+                        collision: { x: 30, z: 20, halfW: 5, halfD: 10 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 6, height: 4, depth: 6 },
+                        material: { color: 0x6B5B4F },
+                        position: { x: 0, y: 2, z: 0 },
+                        collision: { x: 0, z: 0, halfW: 3, halfD: 3 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 16, height: 5, depth: 2 },
+                        material: { color: 0xA0522D },
+                        position: { x: -15, y: 2.5, z: -35 },
+                        collision: { x: -15, z: -35, halfW: 8, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 16, height: 5, depth: 2 },
+                        material: { color: 0xA0522D },
+                        position: { x: 15, y: 2.5, z: -35 },
+                        collision: { x: 15, z: -35, halfW: 8, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 16, height: 5, depth: 2 },
+                        material: { color: 0xA0522D },
+                        position: { x: -15, y: 2.5, z: 35 },
+                        collision: { x: -15, z: 35, halfW: 8, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 16, height: 5, depth: 2 },
+                        material: { color: 0xA0522D },
+                        position: { x: 15, y: 2.5, z: 35 },
+                        collision: { x: 15, z: 35, halfW: 8, halfD: 1 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 4, depth: 16 },
+                        material: { color: 0x8B7355 },
+                        position: { x: 0, y: 2, z: -20 },
+                        collision: { x: 0, z: -20, halfW: 1, halfD: 8 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 4, depth: 16 },
+                        material: { color: 0x8B7355 },
+                        position: { x: 0, y: 2, z: 20 },
+                        collision: { x: 0, z: 20, halfW: 1, halfD: 8 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 5, depth: 30 },
+                        material: { color: 0x7B6B5F },
+                        position: { x: -40, y: 2.5, z: 0 },
+                        collision: { x: -40, z: 0, halfW: 1, halfD: 15 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 5, depth: 30 },
+                        material: { color: 0x7B6B5F },
+                        position: { x: 40, y: 2.5, z: 0 },
+                        collision: { x: 40, z: 0, halfW: 1, halfD: 15 }
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 3, height: 2, depth: 3 },
+                        material: { color: 0x4A4A4A },
+                        position: { x: -35, y: 1, z: -40 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 3, height: 2, depth: 3 },
+                        material: { color: 0x4A4A4A },
+                        position: { x: 35, y: 1, z: -40 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 3, height: 2, depth: 3 },
+                        material: { color: 0x4A4A4A },
+                        position: { x: -35, y: 1, z: 40 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 3, height: 2, depth: 3 },
+                        material: { color: 0x4A4A4A },
+                        position: { x: 35, y: 1, z: 40 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 4, height: 1, depth: 4 },
+                        material: { color: 0xCC0000 },
+                        position: { x: -38, y: 0.5, z: -38 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 4, height: 1, depth: 4 },
+                        material: { color: 0x0000CC },
+                        position: { x: 38, y: 0.5, z: 38 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 3, depth: 2 },
+                        material: { color: 0x5C4033 },
+                        position: { x: -10, y: 1.5, z: -10 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 3, depth: 2 },
+                        material: { color: 0x5C4033 },
+                        position: { x: 10, y: 1.5, z: 10 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 3, depth: 2 },
+                        material: { color: 0x5C4033 },
+                        position: { x: -10, y: 1.5, z: 10 },
+                        noCollision: true
+                    },
+                    {
+                        type: 'box',
+                        geometry: { width: 2, height: 3, depth: 2 },
+                        material: { color: 0x5C4033 },
+                        position: { x: 10, y: 1.5, z: -10 },
+                        noCollision: true
+                    }
+                ]
             }
         }
     };
