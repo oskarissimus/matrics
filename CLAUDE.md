@@ -24,39 +24,6 @@ EOF
 
 Matrics is a browser-based 3D multiplayer FPS game built with Three.js and Socket.IO. Players spawn immediately into the game with no lobby, can move around, shoot each other with pistols, and respawn after death.
 
-## Multi-Agent Coordination
-
-**IMPORTANT:** Multiple AI agents may be working on this codebase simultaneously. To avoid conflicts:
-
-1. **Track your work:** Each agent must create and maintain its own work log file named `agent-work-{agent-id}.md` in the project root (e.g., `agent-work-alice.md`, `agent-work-bob.md`)
-
-2. **Log file format:** Your work log should include:
-   - Timestamp of when you started working
-   - Current task or feature you're implementing
-   - Files you're actively editing
-   - Status updates as you progress
-   - Timestamp when you finish
-
-3. **Before editing code:**
-   - Check for other agent work logs (`agent-work-*.md`) to see what files others are editing
-   - If another agent is working on the same file, coordinate by adding a note to your log and consider working on a different task
-   - Update your log before touching any file
-
-4. **Communication:** Use your work log as a communication mechanism. Other agents will read these logs to understand what's in progress.
-
-Example work log entry:
-```
-## 2025-12-05 14:30
-Agent: alice
-Status: In Progress
-Task: Adding grenade weapon functionality
-Files: game.js (lines 300-350), server.js (lines 65-80)
-Notes: Implementing grenade throwing mechanics
-
-## 2025-12-05 15:15
-Status: Complete
-```
-
 ## Development Commands
 
 Development server with hot reload (preferred for development):
@@ -69,67 +36,159 @@ Production server (runs on http://localhost:3000):
 npm start
 ```
 
-## Architecture
+## Architecture Overview
 
-### Server Architecture (server.js)
+The codebase is organized into modular ES6 modules using import maps (no build step required).
 
-The server runs an Express HTTP server with Socket.IO for real-time communication on port 3000. It maintains a single shared game state for all players:
+### Directory Structure
 
-- `players` object: stores all player data including position, rotation, HP, color, and name
-- `playerCount`: auto-incrementing counter for player names (Player1, Player2, etc.)
+```
+matrics/
+├── index.html              # Entry point with import map config
+├── server.js               # Server entry point (thin, delegates to modules)
+├── maps.js                 # Map definitions (shared server/client via UMD)
+├── styles/
+│   └── main.css            # All CSS styles
+├── client/                 # Client-side ES6 modules
+│   ├── main.js             # Client entry point
+│   ├── constants.js        # All game constants
+│   ├── state.js            # Centralized state management
+│   ├── core/
+│   │   ├── renderer.js     # Three.js scene, camera, lighting
+│   │   └── game-loop.js    # Main game loop
+│   ├── networking/
+│   │   ├── socket.js       # Socket.IO connection
+│   │   └── events.js       # Socket event handlers
+│   ├── input/
+│   │   ├── keyboard.js     # WASD, Tab, backtick handlers
+│   │   ├── mouse.js        # Pointer lock, mouse movement
+│   │   └── controls.js     # High-level input setup
+│   ├── player/
+│   │   ├── character-model.js  # createBlockyCharacter()
+│   │   ├── remote-players.js   # Remote player management
+│   │   └── movement.js         # Player movement + collision
+│   ├── combat/
+│   │   ├── weapon.js       # Weapon model + recoil
+│   │   ├── bullets.js      # Bullet lifecycle
+│   │   └── shooting.js     # Raycasting + hit detection
+│   ├── map/
+│   │   ├── loader.js       # Map loading + clearing
+│   │   ├── elements.js     # Floor + obstacle creation
+│   │   └── collision.js    # Collision detection
+│   └── ui/
+│       ├── hud.js          # HP bar display
+│       ├── scoreboard.js   # Scoreboard rendering
+│       ├── console.js      # In-game console
+│       ├── overlay.js      # Click-to-play overlay
+│       └── username.js     # Username editing
+└── server/                 # Server-side CommonJS modules
+    ├── constants.js        # Server constants
+    ├── state.js            # Server state
+    ├── players/
+    │   ├── manager.js      # Player CRUD operations
+    │   ├── spawning.js     # Spawn positions + colors
+    │   └── validation.js   # Name validation
+    ├── combat/
+    │   └── handler.js      # Hit, death, respawn logic
+    └── events/
+        └── handlers.js     # Socket event handlers
+```
 
-Key server responsibilities:
-- Player lifecycle: connection, initialization with random spawn position and color, disconnection
-- Movement synchronization: broadcasts player position/rotation updates to other clients
-- Combat system: handles hit detection validation, HP updates, death events, and respawn after 3 seconds
-- Shooting events: broadcasts shot events to all players for bullet visualization
+### State Management
 
-### Client Architecture (game.js + index.html)
+All client state is centralized in `client/state.js`:
 
-The client uses Three.js for 3D rendering with two renderers:
-- `THREE.WebGLRenderer`: renders 3D scene with shadow mapping enabled
-- `THREE.CSS2DRenderer`: overlays HTML name tags above players
+- **gameState**: Core game status (isDead, isConnected, currentHP, myPlayerId)
+- **inputState**: User input (movement keys, pitch, yaw)
+- **sceneState**: Three.js objects (scene, camera, renderers, weapon)
+- **entityState**: Game entities (players, bullets, obstacles)
+- **uiState**: UI data (scoreboard, console history)
+- **networkState**: Socket.IO connection
 
-Key client systems:
+### Constants
 
-**Player Representation:**
-- Local player: first-person camera at y=1.6 (eye height) with weapon attached to camera
-- Remote players: blocky character models (head, torso, arms, legs) created with Three.js box geometries, rendered in random colors
+All magic numbers are in `client/constants.js`:
 
-**Controls:**
-- WASD movement uses pitch/yaw angles to calculate forward/right vectors
-- Mouse movement updates pitch (clamped to ±90°) and yaw for camera rotation
-- Pointer lock API for FPS-style mouse control
-- Left click triggers raycasting for hit detection and emits shoot event
+- Movement: MOVE_SPEED, MOUSE_SENSITIVITY, PLAYER_RADIUS
+- Combat: DAMAGE_PER_HIT, BULLET properties, WEAPON properties
+- Visual: HP thresholds, SCENE colors, CAMERA settings, LIGHTING
 
-**Combat:**
-- Client-side raycasting determines hits against remote player meshes
-- Bullets are visual-only (yellow cylinder meshes) that fade out over 1 second lifetime
-- Damage (25 HP per hit) is calculated client-side and sent to server for validation
-- HP bar shows current health with color gradient (green > 60, yellow 30-60, red < 30)
+## Common Tasks
 
-**Networking:**
-Socket.IO events:
-- `init`: receives player ID, full player list, and spawn position
-- `playerJoined/playerLeft`: handles player connection/disconnection
-- `playerMoved`: updates remote player positions
-- `playerShot`: spawns bullet visualization for remote shots
-- `hpUpdate`: syncs HP changes from server
-- `playerDied/playerRespawn`: handles death state and respawn at new random position
+### Adding a New Weapon
 
-### Key Implementation Details
+1. Edit `client/combat/weapon.js` - Add weapon geometry
+2. Edit `client/constants.js` - Add weapon constants
+3. Edit `client/combat/shooting.js` - Add firing logic
 
-**Weapon Model:**
-Created in `createWeapon()` as a group of primitive shapes (box body, cylinder barrel, box handle, cylinder scope) positioned at (0.3, -0.3, -0.5) relative to camera for proper first-person view.
+### Adding a New Socket Event
 
-**Character Models:**
-`createBlockyCharacter()` builds player models from box geometries with proper body proportions. Y-offset of -1.0 applied when positioning so feet align with ground plane.
+1. Server: Add handler in `server/events/handlers.js`
+2. Client: Add handler in `client/networking/events.js`
 
-**Movement System:**
-Camera position represents player position. Movement updates sent to server every frame when socket is connected. Server broadcasts position to other clients who update their local representations.
+### Adding a New Map
 
-**Hit Detection:**
-Client performs raycasting on mouse click. If ray intersects remote player mesh, client sends hit event to server. Server is authoritative for HP values and broadcasts updates to all clients.
+1. Add map definition to `maps.js` with:
+   - Metadata (name, floorSize, spawnArea)
+   - Floor definition
+   - collisionData array
+   - elements array
+
+### Modifying Player Appearance
+
+1. Edit `client/player/character-model.js`
+
+### Modifying UI
+
+1. Edit relevant file in `client/ui/`
+2. CSS changes go in `styles/main.css`
+
+### Modifying Movement/Physics
+
+1. Edit `client/player/movement.js` for movement
+2. Edit `client/map/collision.js` for collision detection
+
+## Key Implementation Details
+
+### Client Architecture
+
+The client uses ES6 modules loaded via import maps (see index.html):
+- Three.js loaded from CDN
+- CSS2DRenderer for name tags
+- Socket.IO loaded from server
+
+Entry point: `client/main.js` calls:
+1. `initRenderer()` - Sets up Three.js scene
+2. `loadMap('default')` - Loads initial map
+3. `createWeapon()` - Creates first-person weapon
+4. `setupControls()` - Binds input handlers
+5. `setupConsoleInput()` - Sets up console
+6. `initUsername()` - Loads saved name
+7. `startGameLoop()` - Begins render loop
+
+### Server Architecture
+
+The server uses CommonJS modules:
+- Express serves static files
+- Socket.IO handles real-time communication
+- State stored in `server/state.js`
+
+Entry point: `server.js` sets up Express and delegates socket handling to `server/events/handlers.js`.
+
+### Networking Events
+
+Socket.IO events handled:
+- `init` - Player initialization with full state
+- `playerJoined/playerLeft` - Player lifecycle
+- `playerMoved` - Position sync
+- `playerShot` - Bullet visualization
+- `hit` - Damage processing
+- `hpUpdate` - HP synchronization
+- `playerDied/playerRespawn` - Death/respawn cycle
+- `scoreUpdate` - Scoreboard data
+- `playerNameChanged` - Name updates
+- `mapChange` - Map switching
+- `consoleMessage` - Server messages
 
 ### Project Constraints
 
@@ -138,3 +197,15 @@ From spec.md:
 - No README file
 - Single game instance per server (no room management)
 - Players spawn immediately with sequential names (Player1, Player2, etc.)
+
+## Multi-Agent Coordination
+
+**IMPORTANT:** Multiple AI agents may be working on this codebase simultaneously. To avoid conflicts:
+
+1. **Track your work:** Each agent must create and maintain its own work log file named `agent-work-{agent-id}.md` in the project root
+
+2. **Log file format:** Include timestamp, task, files being edited, status
+
+3. **Before editing code:** Check for other agent work logs to avoid conflicts
+
+4. **Communication:** Use your work log as a communication mechanism
