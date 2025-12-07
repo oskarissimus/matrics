@@ -24,12 +24,37 @@ export const HP = {
     YELLOW_THRESHOLD: 30
 };
 
-export const WEAPON = {
-    POSITION: { x: 0.3, y: -0.3, z: -0.5 },
-    ROTATION_Y: -0.1,
-    RECOIL_OFFSET: 0.05,
-    RECOIL_DURATION: 100
+export const WEAPONS = {
+    pistol: {
+        id: 'pistol',
+        name: 'Pistol',
+        slot: 2,
+        damage: 15,
+        fireRate: 400,
+        recoilOffset: 0.03,
+        recoilDuration: 80,
+        position: { x: 0.25, y: -0.25, z: -0.4 },
+        rotationY: -0.1,
+        bulletSpeed: 1.8,
+        bulletColor: 0xFFFF00
+    },
+    rifle: {
+        id: 'rifle',
+        name: 'Rifle',
+        slot: 3,
+        damage: 25,
+        fireRate: 200,
+        recoilOffset: 0.05,
+        recoilDuration: 100,
+        position: { x: 0.3, y: -0.3, z: -0.5 },
+        rotationY: -0.1,
+        bulletSpeed: 2.0,
+        bulletColor: 0x00FFFF
+    }
 };
+
+export const DEFAULT_WEAPON = 'pistol';
+export const WEAPON_SWITCH_DURATION = 200;
 
 export const STORAGE_KEY = 'matrics_player_name';
 

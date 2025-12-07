@@ -52,6 +52,14 @@ export const networkState = {
     socket: null
 };
 
+export const weaponState = {
+    currentWeaponId: null,
+    previousWeaponId: null,
+    lastFireTime: 0,
+    weapons: {},
+    isSwitching: false
+};
+
 export function resetGameState() {
     gameState.isDead = false;
     gameState.currentHP = HP.MAX;

@@ -1,6 +1,7 @@
 import { inputState, gameState, networkState } from '../state.js';
 import { toggleConsole } from '../ui/console.js';
 import { updateScoreboardVisibility } from '../ui/scoreboard.js';
+import { switchWeaponBySlot, switchToPreviousWeapon } from '../combat/weapon.js';
 
 export function onKeyDown(event) {
     if (event.code === 'Backquote') {
@@ -31,6 +32,15 @@ export function onKeyDown(event) {
                 networkState.socket.emit('requestScoreboard');
             }
             updateScoreboardVisibility();
+            break;
+        case 'Digit2':
+            switchWeaponBySlot(2);
+            break;
+        case 'Digit3':
+            switchWeaponBySlot(3);
+            break;
+        case 'KeyQ':
+            switchToPreviousWeapon();
             break;
     }
 }

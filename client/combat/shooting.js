@@ -1,20 +1,23 @@
 import * as THREE from 'three';
 import { sceneState, entityState, gameState, networkState } from '../state.js';
-import { DAMAGE_PER_HIT } from '../constants.js';
 import { createBullet } from './bullets.js';
-import { triggerRecoil } from './weapon.js';
+import { getCurrentWeapon, canFire, recordFire, triggerRecoil } from './weapon.js';
 
 const raycaster = new THREE.Raycaster();
 const shootDirection = new THREE.Vector3();
 
 export function shoot() {
     if (gameState.isDead || gameState.consoleOpen) return;
+    if (!canFire()) return;
+
+    const weapon = getCurrentWeapon();
+    recordFire();
 
     sceneState.camera.getWorldDirection(shootDirection);
 
     const bulletOrigin = new THREE.Vector3();
     sceneState.camera.getWorldPosition(bulletOrigin);
-    createBullet(bulletOrigin, shootDirection);
+    createBullet(bulletOrigin, shootDirection, weapon.bulletColor, weapon.bulletSpeed);
 
     raycaster.set(sceneState.camera.position, shootDirection);
 
@@ -38,7 +41,7 @@ export function shoot() {
         if (closest.hit.distance < wallDistance) {
             networkState.socket.emit('hit', {
                 playerId: closest.playerId,
-                damage: DAMAGE_PER_HIT
+                damage: weapon.damage
             });
         }
     }

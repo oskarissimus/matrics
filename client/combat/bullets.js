@@ -2,11 +2,11 @@ import * as THREE from 'three';
 import { sceneState, entityState } from '../state.js';
 import { BULLET } from '../constants.js';
 
-export function createBullet(origin, direction) {
+export function createBullet(origin, direction, color = BULLET.COLOR, speed = BULLET.SPEED) {
     const bulletGeometry = new THREE.CylinderGeometry(BULLET.RADIUS, BULLET.RADIUS, BULLET.LENGTH);
     const bulletMaterial = new THREE.MeshStandardMaterial({
-        color: BULLET.COLOR,
-        emissive: BULLET.COLOR,
+        color: color,
+        emissive: color,
         emissiveIntensity: 2.5,
         metalness: 0.3,
         roughness: 0.2,
@@ -35,7 +35,7 @@ export function createBullet(origin, direction) {
     trailGeometry.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
 
     const trailMaterial = new THREE.LineBasicMaterial({
-        color: BULLET.COLOR,
+        color: color,
         transparent: true,
         opacity: 0.6
     });
@@ -46,7 +46,7 @@ export function createBullet(origin, direction) {
     const bullet = {
         mesh: bulletMesh,
         direction: direction.clone(),
-        speed: BULLET.SPEED,
+        speed: speed,
         lifetime: BULLET.LIFETIME,
         age: 0,
         trail: trailLine,

@@ -9,6 +9,7 @@ import { updateScoreboardVisibility, renderScoreboard } from '../ui/scoreboard.j
 import { addConsoleOutput } from '../ui/console.js';
 import { createDeadBody } from '../player/character-model.js';
 import { handleNameChangeRejected } from '../ui/username.js';
+import { hideAllWeapons, showCurrentWeapon } from '../combat/weapon.js';
 
 export function setupSocketEvents() {
     const socket = networkState.socket;
@@ -133,9 +134,7 @@ function handlePlayerDied(data) {
             killerId: data.killerId
         };
 
-        if (sceneState.weaponMesh) {
-            sceneState.weaponMesh.visible = false;
-        }
+        hideAllWeapons();
 
         updateScoreboardVisibility();
     } else if (entityState.players[data.playerId]) {
@@ -206,9 +205,7 @@ function handlePlayerRespawn(data) {
         gameState.currentHP = data.hp;
         updateHPDisplay();
 
-        if (sceneState.weaponMesh) {
-            sceneState.weaponMesh.visible = true;
-        }
+        showCurrentWeapon();
 
         inputState.pitch = 0;
         inputState.yaw = 0;
