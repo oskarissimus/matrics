@@ -16,6 +16,8 @@ export function initRenderer() {
     );
     sceneState.camera.position.set(0, EYE_HEIGHT, 0);
 
+    THREE.ColorManagement.enabled = false;
+
     sceneState.renderer = new THREE.WebGLRenderer({ antialias: true });
     sceneState.renderer.setSize(window.innerWidth, window.innerHeight);
     sceneState.renderer.shadowMap.enabled = true;
