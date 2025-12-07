@@ -103,3 +103,24 @@ export function cancelInlineEdit() {
     cancelBtn.classList.add('hidden');
     input.classList.remove('error');
 }
+
+export function handleNameChangeRejected(data) {
+    const input = document.getElementById('inlineNameInput');
+    const username = document.getElementById('currentUsername');
+
+    if (data.reason === 'taken') {
+        input.classList.remove('hidden');
+        input.classList.add('error');
+        input.placeholder = 'Name already taken';
+        setTimeout(() => {
+            input.classList.remove('error');
+            input.placeholder = '';
+        }, 2000);
+    } else {
+        input.classList.add('error');
+        setTimeout(() => input.classList.remove('error'), 500);
+    }
+
+    const previousName = gameState.myPlayerData?.name || username.textContent;
+    saveName(previousName);
+}

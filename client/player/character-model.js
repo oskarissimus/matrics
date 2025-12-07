@@ -100,3 +100,77 @@ export function createBlockyCharacter(colorScheme, playerName) {
 
     return playerGroup;
 }
+
+export function createDeadBody(colorScheme) {
+    const bodyGroup = new THREE.Group();
+
+    const headMaterial = new THREE.MeshPhongMaterial({
+        color: colorScheme.primary,
+        shininess: 80,
+        specular: 0x444444
+    });
+    const torsoMaterial = new THREE.MeshPhongMaterial({
+        color: colorScheme.primary,
+        shininess: 20,
+        specular: 0x111111
+    });
+    const armMaterial = new THREE.MeshPhongMaterial({
+        color: colorScheme.secondary,
+        shininess: 50,
+        specular: 0x333333
+    });
+    const legMaterial = new THREE.MeshPhongMaterial({
+        color: colorScheme.accent,
+        shininess: 40,
+        specular: 0x222222
+    });
+
+    const headGeo = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+    const headMesh = new THREE.Mesh(headGeo, headMaterial);
+    headMesh.position.set(0, 0.25, -1.2);
+    headMesh.castShadow = true;
+    headMesh.receiveShadow = true;
+    bodyGroup.add(headMesh);
+
+    const torsoGeo = new THREE.BoxGeometry(0.6, 0.8, 0.4);
+    const torsoMesh = new THREE.Mesh(torsoGeo, torsoMaterial);
+    torsoMesh.position.set(0, 0.2, -0.5);
+    torsoMesh.rotation.x = Math.PI / 2;
+    torsoMesh.castShadow = true;
+    torsoMesh.receiveShadow = true;
+    bodyGroup.add(torsoMesh);
+
+    const armGeo = new THREE.BoxGeometry(0.25, 0.7, 0.25);
+    const leftArmMesh = new THREE.Mesh(armGeo, armMaterial);
+    leftArmMesh.position.set(-0.45, 0.13, -0.5);
+    leftArmMesh.rotation.x = Math.PI / 2;
+    leftArmMesh.rotation.z = 0.3;
+    leftArmMesh.castShadow = true;
+    leftArmMesh.receiveShadow = true;
+    bodyGroup.add(leftArmMesh);
+
+    const rightArmMesh = new THREE.Mesh(armGeo, armMaterial);
+    rightArmMesh.position.set(0.45, 0.13, -0.5);
+    rightArmMesh.rotation.x = Math.PI / 2;
+    rightArmMesh.rotation.z = -0.3;
+    rightArmMesh.castShadow = true;
+    rightArmMesh.receiveShadow = true;
+    bodyGroup.add(rightArmMesh);
+
+    const legGeo = new THREE.BoxGeometry(0.25, 0.75, 0.25);
+    const leftLegMesh = new THREE.Mesh(legGeo, legMaterial);
+    leftLegMesh.position.set(-0.175, 0.13, 0.3);
+    leftLegMesh.rotation.x = Math.PI / 2;
+    leftLegMesh.castShadow = true;
+    leftLegMesh.receiveShadow = true;
+    bodyGroup.add(leftLegMesh);
+
+    const rightLegMesh = new THREE.Mesh(legGeo, legMaterial);
+    rightLegMesh.position.set(0.175, 0.13, 0.3);
+    rightLegMesh.rotation.x = Math.PI / 2;
+    rightLegMesh.castShadow = true;
+    rightLegMesh.receiveShadow = true;
+    bodyGroup.add(rightLegMesh);
+
+    return bodyGroup;
+}

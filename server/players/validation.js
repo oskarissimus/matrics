@@ -1,3 +1,16 @@
+const serverState = require('../state.js');
+
+function isNameTaken(name, excludeSocketId = null) {
+    const normalizedName = name.toLowerCase();
+    for (const [socketId, player] of Object.entries(serverState.players)) {
+        if (excludeSocketId && socketId === excludeSocketId) continue;
+        if (player.name.toLowerCase() === normalizedName) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function validatePlayerName(name) {
     if (!name || typeof name !== 'string') {
         return { valid: false };
@@ -13,4 +26,4 @@ function validatePlayerName(name) {
     return { valid: true, name: trimmedName };
 }
 
-module.exports = { validatePlayerName };
+module.exports = { validatePlayerName, isNameTaken };

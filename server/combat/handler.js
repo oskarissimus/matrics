@@ -32,7 +32,10 @@ function handleDeath(io, killerId, victimId) {
 
     io.emit('playerDied', {
         playerId: victimId,
-        killerId: killerId
+        killerId: killerId,
+        deathPosition: { ...victim.position },
+        victimColorScheme: victim.colorScheme,
+        killerPosition: killer ? { ...killer.position } : null
     });
 
     io.emit('scoreUpdate', getScoreboard());

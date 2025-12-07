@@ -10,7 +10,8 @@ export const gameState = {
     myPlayerId: null,
     myPlayerData: null,
     currentHP: HP.MAX,
-    pendingPlayerName: null
+    pendingPlayerName: null,
+    deathData: null
 };
 
 export const inputState = {

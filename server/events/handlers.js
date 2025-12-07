@@ -53,9 +53,11 @@ function setupSocketHandlers(io, socket) {
     });
 
     socket.on('changeName', (newName) => {
-        const updatedName = updatePlayerName(socket.id, newName);
-        if (updatedName) {
-            io.emit('playerNameChanged', { id: socket.id, name: updatedName });
+        const result = updatePlayerName(socket.id, newName);
+        if (result.success) {
+            io.emit('playerNameChanged', { id: socket.id, name: result.name });
+        } else {
+            socket.emit('nameChangeRejected', { reason: result.reason });
         }
     });
 

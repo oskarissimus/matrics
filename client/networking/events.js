@@ -1,12 +1,14 @@
 import * as THREE from 'three';
-import { networkState, gameState, sceneState, entityState, uiState } from '../state.js';
-import { HP, CHARACTER_Y_OFFSET } from '../constants.js';
+import { networkState, gameState, sceneState, entityState, uiState, inputState } from '../state.js';
+import { HP, CHARACTER_Y_OFFSET, EYE_HEIGHT } from '../constants.js';
 import { loadMap } from '../map/loader.js';
 import { addPlayer, removePlayer } from '../player/remote-players.js';
 import { createBullet } from '../combat/bullets.js';
 import { updateHPDisplay } from '../ui/hud.js';
 import { updateScoreboardVisibility, renderScoreboard } from '../ui/scoreboard.js';
 import { addConsoleOutput } from '../ui/console.js';
+import { createDeadBody } from '../player/character-model.js';
+import { handleNameChangeRejected } from '../ui/username.js';
 
 export function setupSocketEvents() {
     const socket = networkState.socket;
@@ -19,6 +21,7 @@ export function setupSocketEvents() {
     socket.on('playerDied', handlePlayerDied);
     socket.on('scoreUpdate', handleScoreUpdate);
     socket.on('playerNameChanged', handlePlayerNameChanged);
+    socket.on('nameChangeRejected', handleNameChangeRejected);
     socket.on('mapChange', handleMapChange);
     socket.on('consoleMessage', handleConsoleMessage);
     socket.on('playerRespawn', handlePlayerRespawn);
@@ -81,9 +84,72 @@ function handleHpUpdate(data) {
 function handlePlayerDied(data) {
     if (data.playerId === gameState.myPlayerId) {
         gameState.isDead = true;
+
+        const deathPosition = new THREE.Vector3(
+            data.deathPosition.x,
+            0.01,
+            data.deathPosition.z
+        );
+
+        const deadBody = createDeadBody(data.victimColorScheme);
+        deadBody.position.copy(deathPosition);
+        sceneState.scene.add(deadBody);
+
+        let cameraTargetPosition = new THREE.Vector3();
+        let lookAtPoint = deathPosition.clone();
+        lookAtPoint.y = 0.5;
+
+        if (data.killerPosition && entityState.players[data.killerId]) {
+            const killerPos = new THREE.Vector3(
+                data.killerPosition.x,
+                EYE_HEIGHT,
+                data.killerPosition.z
+            );
+
+            const midPoint = new THREE.Vector3().lerpVectors(deathPosition, killerPos, 0.3);
+            const perpendicular = new THREE.Vector3()
+                .subVectors(killerPos, deathPosition)
+                .normalize();
+            const offset = new THREE.Vector3(-perpendicular.z, 0, perpendicular.x).multiplyScalar(3);
+
+            cameraTargetPosition.copy(midPoint).add(offset);
+            cameraTargetPosition.y = 4;
+
+            lookAtPoint.lerpVectors(deathPosition, killerPos, 0.4);
+            lookAtPoint.y = 1;
+        } else {
+            cameraTargetPosition.set(
+                deathPosition.x + 3,
+                4,
+                deathPosition.z + 3
+            );
+        }
+
+        sceneState.camera.position.copy(cameraTargetPosition);
+        sceneState.camera.lookAt(lookAtPoint);
+
+        gameState.deathData = {
+            deadBody: deadBody,
+            killerId: data.killerId
+        };
+
+        if (sceneState.weaponMesh) {
+            sceneState.weaponMesh.visible = false;
+        }
+
         updateScoreboardVisibility();
     } else if (entityState.players[data.playerId]) {
-        entityState.players[data.playerId].mesh.visible = false;
+        const playerEntry = entityState.players[data.playerId];
+        playerEntry.mesh.visible = false;
+
+        const deadBody = createDeadBody(playerEntry.data.colorScheme);
+        deadBody.position.set(
+            data.deathPosition.x,
+            0.01,
+            data.deathPosition.z
+        );
+        sceneState.scene.add(deadBody);
+        playerEntry.deadBody = deadBody;
     }
 }
 
@@ -124,6 +190,11 @@ function handleConsoleMessage(message) {
 
 function handlePlayerRespawn(data) {
     if (data.playerId === gameState.myPlayerId) {
+        if (gameState.deathData && gameState.deathData.deadBody) {
+            sceneState.scene.remove(gameState.deathData.deadBody);
+            gameState.deathData = null;
+        }
+
         gameState.isDead = false;
         updateScoreboardVisibility();
         sceneState.camera.position.set(
@@ -131,11 +202,26 @@ function handlePlayerRespawn(data) {
             data.position.y,
             data.position.z
         );
+        sceneState.camera.rotation.set(0, 0, 0);
         gameState.currentHP = data.hp;
         updateHPDisplay();
+
+        if (sceneState.weaponMesh) {
+            sceneState.weaponMesh.visible = true;
+        }
+
+        inputState.pitch = 0;
+        inputState.yaw = 0;
     } else if (entityState.players[data.playerId]) {
-        entityState.players[data.playerId].mesh.visible = true;
-        entityState.players[data.playerId].mesh.position.set(
+        const playerEntry = entityState.players[data.playerId];
+
+        if (playerEntry.deadBody) {
+            sceneState.scene.remove(playerEntry.deadBody);
+            playerEntry.deadBody = null;
+        }
+
+        playerEntry.mesh.visible = true;
+        playerEntry.mesh.position.set(
             data.position.x,
             data.position.y + CHARACTER_Y_OFFSET,
             data.position.z

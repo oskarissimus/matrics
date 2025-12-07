@@ -1,12 +1,22 @@
 const serverState = require('../state.js');
 const { DEFAULT_HP } = require('../constants.js');
-const { validatePlayerName } = require('./validation.js');
+const { validatePlayerName, isNameTaken } = require('./validation.js');
 const { getSpawnPosition, getColorScheme } = require('./spawning.js');
 
 function createPlayer(socketId, clientName) {
     const validation = validatePlayerName(clientName);
     serverState.playerCount++;
-    const playerName = validation.valid ? validation.name : `Player${serverState.playerCount}`;
+
+    let playerName;
+    if (validation.valid && !isNameTaken(validation.name)) {
+        playerName = validation.name;
+    } else {
+        playerName = `Player${serverState.playerCount}`;
+        while (isNameTaken(playerName)) {
+            serverState.playerCount++;
+            playerName = `Player${serverState.playerCount}`;
+        }
+    }
 
     const newPlayer = {
         id: socketId,
@@ -37,11 +47,17 @@ function updatePlayerPosition(socketId, position, rotation) {
 
 function updatePlayerName(socketId, newName) {
     const validation = validatePlayerName(newName);
-    if (validation.valid && serverState.players[socketId]) {
-        serverState.players[socketId].name = validation.name;
-        return validation.name;
+    if (!validation.valid) {
+        return { success: false, reason: 'invalid' };
     }
-    return null;
+    if (!serverState.players[socketId]) {
+        return { success: false, reason: 'not_found' };
+    }
+    if (isNameTaken(validation.name, socketId)) {
+        return { success: false, reason: 'taken' };
+    }
+    serverState.players[socketId].name = validation.name;
+    return { success: true, name: validation.name };
 }
 
 function removePlayer(socketId) {

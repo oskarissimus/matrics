@@ -1,9 +1,12 @@
 import * as THREE from 'three';
-import { sceneState, inputState, networkState } from '../state.js';
+import { sceneState, inputState, networkState, gameState } from '../state.js';
 import { MOVE_SPEED } from '../constants.js';
 import { checkCollision } from '../map/collision.js';
 
 export function updateMovement() {
+    if (gameState.isDead) {
+        return;
+    }
     const direction = new THREE.Vector3();
     const right = new THREE.Vector3();
 
