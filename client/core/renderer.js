@@ -20,7 +20,6 @@ export function initRenderer() {
     sceneState.renderer.setSize(window.innerWidth, window.innerHeight);
     sceneState.renderer.shadowMap.enabled = true;
     sceneState.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    sceneState.renderer.outputColorSpace = THREE.SRGBColorSpace;
     document.getElementById('gameCanvas').appendChild(sceneState.renderer.domElement);
 
     sceneState.labelRenderer = new CSS2DRenderer();
