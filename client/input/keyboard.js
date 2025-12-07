@@ -34,6 +34,9 @@ export function onKeyDown(event) {
             }
             updateScoreboardVisibility();
             break;
+        case 'Digit1':
+            switchWeaponBySlot(1);
+            break;
         case 'Digit2':
             switchWeaponBySlot(2);
             break;

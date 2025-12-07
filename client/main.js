@@ -5,6 +5,7 @@ import { setupConsoleInput } from './ui/console.js';
 import { initUsername } from './ui/username.js';
 import { loadMap } from './map/loader.js';
 import { initWeapons } from './combat/weapon.js';
+import { initWeaponDebug } from './debug/weapon-debug.js';
 
 function init() {
     initRenderer();
@@ -13,6 +14,7 @@ function init() {
     setupControls();
     setupConsoleInput();
     initUsername();
+    initWeaponDebug();
     startGameLoop();
 }
 
