@@ -3,6 +3,9 @@ import { CSS2DRenderer } from 'three/addons/renderers/CSS2DRenderer.js';
 import { sceneState } from '../state.js';
 import { SCENE, CAMERA, LIGHTING, EYE_HEIGHT } from '../constants.js';
 
+let ambientLight = null;
+let directionalLight = null;
+
 export function initRenderer() {
     sceneState.scene = new THREE.Scene();
     sceneState.scene.background = new THREE.Color(SCENE.BACKGROUND_COLOR);
@@ -41,10 +44,10 @@ export function initRenderer() {
 }
 
 function initLighting() {
-    const ambientLight = new THREE.AmbientLight(0xffffff, LIGHTING.AMBIENT_INTENSITY);
+    ambientLight = new THREE.AmbientLight(0xffffff, LIGHTING.AMBIENT_INTENSITY);
     sceneState.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, LIGHTING.DIRECTIONAL_INTENSITY);
+    directionalLight = new THREE.DirectionalLight(0xffffff, LIGHTING.DIRECTIONAL_INTENSITY);
     directionalLight.position.set(10, 20, 10);
     directionalLight.castShadow = true;
     directionalLight.shadow.camera.left = -LIGHTING.SHADOW_CAMERA_SIZE;
@@ -56,6 +59,50 @@ function initLighting() {
     directionalLight.shadow.mapSize.width = LIGHTING.SHADOW_MAP_SIZE;
     directionalLight.shadow.mapSize.height = LIGHTING.SHADOW_MAP_SIZE;
     sceneState.scene.add(directionalLight);
+}
+
+export function applyAtmosphere(atmosphere) {
+    if (!atmosphere) {
+        sceneState.scene.background = new THREE.Color(SCENE.BACKGROUND_COLOR);
+        sceneState.scene.fog = new THREE.Fog(SCENE.BACKGROUND_COLOR, SCENE.FOG_NEAR, SCENE.FOG_FAR);
+        if (ambientLight) {
+            ambientLight.color.setHex(0xffffff);
+            ambientLight.intensity = LIGHTING.AMBIENT_INTENSITY;
+        }
+        if (directionalLight) {
+            directionalLight.color.setHex(0xffffff);
+            directionalLight.intensity = LIGHTING.DIRECTIONAL_INTENSITY;
+        }
+        return;
+    }
+
+    if (atmosphere.backgroundColor !== undefined) {
+        sceneState.scene.background = new THREE.Color(atmosphere.backgroundColor);
+    }
+
+    if (atmosphere.fogColor !== undefined) {
+        const fogNear = atmosphere.fogNear !== undefined ? atmosphere.fogNear : SCENE.FOG_NEAR;
+        const fogFar = atmosphere.fogFar !== undefined ? atmosphere.fogFar : SCENE.FOG_FAR;
+        sceneState.scene.fog = new THREE.Fog(atmosphere.fogColor, fogNear, fogFar);
+    }
+
+    if (ambientLight) {
+        if (atmosphere.ambientColor !== undefined) {
+            ambientLight.color.setHex(atmosphere.ambientColor);
+        }
+        if (atmosphere.ambientIntensity !== undefined) {
+            ambientLight.intensity = atmosphere.ambientIntensity;
+        }
+    }
+
+    if (directionalLight) {
+        if (atmosphere.sunColor !== undefined) {
+            directionalLight.color.setHex(atmosphere.sunColor);
+        }
+        if (atmosphere.sunIntensity !== undefined) {
+            directionalLight.intensity = atmosphere.sunIntensity;
+        }
+    }
 }
 
 function onWindowResize() {
