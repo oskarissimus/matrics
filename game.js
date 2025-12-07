@@ -671,6 +671,42 @@ function updateBullets(deltaTime) {
     }
 }
 
+function updateLabelVisibility() {
+    const cameraPosition = new THREE.Vector3();
+    camera.getWorldPosition(cameraPosition);
+
+    const labelPosition = new THREE.Vector3();
+    const direction = new THREE.Vector3();
+
+    for (let playerId in players) {
+        if (playerId === myPlayerId || !players[playerId] || !players[playerId].mesh) {
+            continue;
+        }
+
+        const playerMesh = players[playerId].mesh;
+        if (!playerMesh.visible) {
+            continue;
+        }
+
+        const nameLabel = playerMesh.children.find(child => child.isCSS2DObject);
+        if (!nameLabel) {
+            continue;
+        }
+
+        nameLabel.getWorldPosition(labelPosition);
+        direction.subVectors(labelPosition, cameraPosition);
+        const distance = direction.length();
+        direction.normalize();
+
+        raycaster.set(cameraPosition, direction);
+        raycaster.far = distance - 0.1;
+
+        const hits = raycaster.intersectObjects(obstacleMeshes, false);
+
+        nameLabel.element.style.display = hits.length > 0 ? 'none' : '';
+    }
+}
+
 function setupControls() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup', onKeyUp);
@@ -1127,6 +1163,7 @@ function animate() {
 
     renderer.render(scene, camera);
     labelRenderer.render(scene, camera);
+    updateLabelVisibility();
 }
 
 init();
