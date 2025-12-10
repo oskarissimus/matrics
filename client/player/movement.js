@@ -3,7 +3,7 @@ import { sceneState, inputState, networkState, gameState } from '../state.js';
 import { MOVE_SPEED, GRAVITY, EYE_HEIGHT } from '../constants.js';
 import { checkCollision } from '../map/collision.js';
 
-export function updateMovement() {
+export function updateMovement(deltaTime) {
     if (gameState.isDead) {
         return;
     }
@@ -20,22 +20,23 @@ export function updateMovement() {
 
     let newX = sceneState.camera.position.x;
     let newZ = sceneState.camera.position.z;
+    const moveAmount = MOVE_SPEED * deltaTime;
 
     if (inputState.moveForward) {
-        newX -= direction.x * MOVE_SPEED;
-        newZ -= direction.z * MOVE_SPEED;
+        newX -= direction.x * moveAmount;
+        newZ -= direction.z * moveAmount;
     }
     if (inputState.moveBackward) {
-        newX += direction.x * MOVE_SPEED;
-        newZ += direction.z * MOVE_SPEED;
+        newX += direction.x * moveAmount;
+        newZ += direction.z * moveAmount;
     }
     if (inputState.moveLeft) {
-        newX -= right.x * MOVE_SPEED;
-        newZ -= right.z * MOVE_SPEED;
+        newX -= right.x * moveAmount;
+        newZ -= right.z * moveAmount;
     }
     if (inputState.moveRight) {
-        newX += right.x * MOVE_SPEED;
-        newZ += right.z * MOVE_SPEED;
+        newX += right.x * moveAmount;
+        newZ += right.z * moveAmount;
     }
 
     if (!checkCollision(newX, sceneState.camera.position.z)) {
@@ -45,8 +46,8 @@ export function updateMovement() {
         sceneState.camera.position.z = newZ;
     }
 
-    inputState.velocityY -= GRAVITY;
-    sceneState.camera.position.y += inputState.velocityY;
+    inputState.velocityY -= GRAVITY * deltaTime;
+    sceneState.camera.position.y += inputState.velocityY * deltaTime;
 
     if (sceneState.camera.position.y <= EYE_HEIGHT) {
         sceneState.camera.position.y = EYE_HEIGHT;

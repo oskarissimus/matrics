@@ -1,10 +1,10 @@
-export const MOVE_SPEED = 0.15;
+export const MOVE_SPEED = 9.0;
 export const MOUSE_SENSITIVITY = 0.002;
 export const PLAYER_RADIUS = 0.5;
 export const MAP_BOUNDARY = 48;
 export const EYE_HEIGHT = 1.6;
-export const JUMP_VELOCITY = 0.3;
-export const GRAVITY = 0.015;
+export const JUMP_VELOCITY = 8.0;
+export const GRAVITY = 30.0;
 export const CHARACTER_Y_OFFSET = -1.6;
 export const DAMAGE_PER_HIT = 25;
 export const RESPAWN_DELAY = 3000;
@@ -14,7 +14,7 @@ export const BULLET = {
     LENGTH: 0.4,
     LIFETIME: 2.5,
     COLOR: 0x00FFFF,
-    SPEED: 2,
+    SPEED: 120,
     FADE_START_PERCENT: 0.6,
     TRAIL_LENGTH: 6,
     TRAIL_UPDATE_INTERVAL: 2
@@ -37,7 +37,7 @@ export const WEAPONS = {
         recoilDuration: 80,
         position: { x: 0.25, y: -0.25, z: -0.4 },
         rotationY: -0.1,
-        bulletSpeed: 1.8,
+        bulletSpeed: 108,
         bulletColor: 0xFFFF00
     },
     rifle: {
@@ -50,7 +50,7 @@ export const WEAPONS = {
         recoilDuration: 100,
         position: { x: 0.3, y: -0.3, z: -0.5 },
         rotationY: -0.1,
-        bulletSpeed: 2.0,
+        bulletSpeed: 120,
         bulletColor: 0x00FFFF
     }
 };

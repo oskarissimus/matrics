@@ -55,6 +55,14 @@ export const networkState = {
     socket: null
 };
 
+export const performanceState = {
+    fps: 0,
+    frameCount: 0,
+    lastFpsUpdate: 0,
+    ping: 0,
+    lastPingTime: 0
+};
+
 export const weaponState = {
     currentWeaponId: null,
     previousWeaponId: null,

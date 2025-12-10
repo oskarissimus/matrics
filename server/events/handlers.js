@@ -78,6 +78,10 @@ function setupSocketHandlers(io, socket) {
         }
     });
 
+    socket.on('ping', () => {
+        socket.emit('pong');
+    });
+
     socket.on('changeMap', (mapName) => {
         if (!MapDefinitions.maps[mapName]) {
             socket.emit('consoleMessage', `Unknown map: ${mapName}`);
