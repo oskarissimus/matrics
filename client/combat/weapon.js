@@ -1,6 +1,94 @@
 import * as THREE from 'three';
-import { sceneState, weaponState, gameState } from '../state.js';
+import { sceneState, weaponState, gameState, meleeState } from '../state.js';
 import { WEAPONS, DEFAULT_WEAPON, WEAPON_SWITCH_DURATION } from '../constants.js';
+import { getTexture } from '../core/texture-generator.js';
+
+function createKnifeModel() {
+    const group = new THREE.Group();
+
+    const bladeMaterial = new THREE.MeshPhongMaterial({
+        color: 0xcccccc,
+        shininess: 150,
+        specular: 0xffffff
+    });
+
+    const bladeGeometry = new THREE.BoxGeometry(0.12, 0.008, 0.025);
+    const bladeMesh = new THREE.Mesh(bladeGeometry, bladeMaterial);
+    bladeMesh.position.set(-0.08, 0, 0);
+    group.add(bladeMesh);
+
+    const edgeMaterial = new THREE.MeshPhongMaterial({
+        color: 0xeeeeee,
+        shininess: 200,
+        specular: 0xffffff
+    });
+    const edgeGeometry = new THREE.BoxGeometry(0.12, 0.003, 0.008);
+    const edgeMesh = new THREE.Mesh(edgeGeometry, edgeMaterial);
+    edgeMesh.position.set(-0.08, -0.004, -0.015);
+    group.add(edgeMesh);
+
+    const tipGeometry = new THREE.ConeGeometry(0.018, 0.06, 4);
+    const tipMesh = new THREE.Mesh(tipGeometry, bladeMaterial);
+    tipMesh.rotation.z = Math.PI / 2;
+    tipMesh.position.set(-0.17, 0, 0);
+    group.add(tipMesh);
+
+    const serrationMaterial = new THREE.MeshPhongMaterial({
+        color: 0x888888,
+        shininess: 100
+    });
+    for (let i = 0; i < 5; i++) {
+        const toothGeometry = new THREE.ConeGeometry(0.004, 0.008, 3);
+        const toothMesh = new THREE.Mesh(toothGeometry, serrationMaterial);
+        toothMesh.rotation.z = -Math.PI / 2;
+        toothMesh.position.set(-0.05 - i * 0.015, 0.008, 0);
+        group.add(toothMesh);
+    }
+
+    const guardMaterial = new THREE.MeshPhongMaterial({
+        color: 0x222222,
+        shininess: 80,
+        specular: 0x333333
+    });
+    const guardGeometry = new THREE.BoxGeometry(0.01, 0.035, 0.04);
+    const guardMesh = new THREE.Mesh(guardGeometry, guardMaterial);
+    guardMesh.position.set(-0.015, 0, 0);
+    group.add(guardMesh);
+
+    const handleMaterial = new THREE.MeshPhongMaterial({
+        color: 0x1a1a1a,
+        shininess: 20,
+        specular: 0x222222
+    });
+    const handleGeometry = new THREE.BoxGeometry(0.09, 0.028, 0.032);
+    const handleMesh = new THREE.Mesh(handleGeometry, handleMaterial);
+    handleMesh.position.set(0.04, 0, 0);
+    group.add(handleMesh);
+
+    const gripMaterial = new THREE.MeshPhongMaterial({
+        color: 0x2a2d2a,
+        shininess: 10
+    });
+    for (let i = 0; i < 4; i++) {
+        const gripGeometry = new THREE.BoxGeometry(0.015, 0.03, 0.034);
+        const gripMesh = new THREE.Mesh(gripGeometry, gripMaterial);
+        gripMesh.position.set(0.01 + i * 0.02, 0, 0);
+        group.add(gripMesh);
+    }
+
+    const pommelMaterial = new THREE.MeshPhongMaterial({
+        color: 0x222222,
+        shininess: 60
+    });
+    const pommelGeometry = new THREE.BoxGeometry(0.015, 0.032, 0.036);
+    const pommelMesh = new THREE.Mesh(pommelGeometry, pommelMaterial);
+    pommelMesh.position.set(0.095, 0, 0);
+    group.add(pommelMesh);
+
+    group.rotation.y = Math.PI;
+
+    return group;
+}
 
 function createPistolModel() {
     const group = new THREE.Group();
@@ -60,6 +148,7 @@ function createRifleModel() {
 }
 
 const weaponModelCreators = {
+    knife: createKnifeModel,
     pistol: createPistolModel,
     rifle: createRifleModel
 };
@@ -90,9 +179,11 @@ export function getCurrentWeapon() {
 
 export function canFire() {
     if (weaponState.isSwitching) return false;
+    if (meleeState.isAttacking) return false;
     const weapon = getCurrentWeapon();
     const now = Date.now();
-    return now - weaponState.lastFireTime >= weapon.fireRate;
+    const rate = weapon.attackRate || weapon.fireRate;
+    return now - weaponState.lastFireTime >= rate;
 }
 
 export function recordFire() {

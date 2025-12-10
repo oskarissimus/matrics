@@ -48,6 +48,29 @@ function setupSocketHandlers(io, socket) {
         handleHit(io, socket.id, data.playerId, data.damage);
     });
 
+    socket.on('meleeHit', (data) => {
+        const attacker = getPlayer(socket.id);
+        const target = getPlayer(data.targetId);
+
+        if (!attacker || !target || target.isDead) return;
+
+        const dx = target.position.x - attacker.position.x;
+        const dz = target.position.z - attacker.position.z;
+        const distance = Math.sqrt(dx * dx + dz * dz);
+
+        const MELEE_RANGE = 2.5;
+        if (distance <= MELEE_RANGE) {
+            handleHit(io, socket.id, data.targetId, data.damage);
+        }
+    });
+
+    socket.on('meleeAttack', (data) => {
+        socket.broadcast.emit('playerMeleeAttack', {
+            attackerId: socket.id,
+            weaponId: data.weaponId
+        });
+    });
+
     socket.on('requestScoreboard', () => {
         socket.emit('scoreUpdate', getScoreboard());
     });

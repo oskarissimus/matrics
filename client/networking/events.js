@@ -28,6 +28,7 @@ export function setupSocketEvents() {
     socket.on('playerRespawn', handlePlayerRespawn);
     socket.on('playerLeft', handlePlayerLeft);
     socket.on('playerSkinChanged', handlePlayerSkinChanged);
+    socket.on('playerMeleeAttack', handlePlayerMeleeAttack);
 }
 
 function handleInit(data) {
@@ -240,4 +241,7 @@ function handlePlayerRespawn(data) {
 
 function handlePlayerLeft(playerId) {
     removePlayer(playerId);
+}
+
+function handlePlayerMeleeAttack(data) {
 }

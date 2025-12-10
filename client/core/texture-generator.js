@@ -153,6 +153,73 @@ function generateConcreteTexture(size = 256) {
     return canvas;
 }
 
+function generateBladeTexture(size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    const gradient = ctx.createLinearGradient(0, 0, size, 0);
+    gradient.addColorStop(0, '#4a4a4a');
+    gradient.addColorStop(0.2, '#7a7a7a');
+    gradient.addColorStop(0.4, '#b0b0b0');
+    gradient.addColorStop(0.5, '#d0d0d0');
+    gradient.addColorStop(0.6, '#b0b0b0');
+    gradient.addColorStop(0.8, '#7a7a7a');
+    gradient.addColorStop(1, '#4a4a4a');
+
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
+
+    ctx.strokeStyle = 'rgba(220, 220, 220, 0.15)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 15; i++) {
+        ctx.beginPath();
+        const x = Math.random() * size;
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x + (Math.random() - 0.5) * 10, size);
+        ctx.stroke();
+    }
+
+    ctx.fillStyle = '#e8e8e8';
+    ctx.fillRect(0, 0, 4, size);
+
+    return canvas;
+}
+
+function generateKnifeHandleTexture(size = 128) {
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#2a2d2a';
+    ctx.fillRect(0, 0, size, size);
+
+    const wrapSpacing = 8;
+    ctx.strokeStyle = '#3a3d3a';
+    ctx.lineWidth = 4;
+
+    for (let i = -size; i < size * 2; i += wrapSpacing) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i + size, size);
+        ctx.stroke();
+    }
+
+    ctx.fillStyle = '#1a1d1a';
+    for (let y = 4; y < size; y += 8) {
+        for (let x = 4; x < size; x += 8) {
+            const offsetX = (Math.floor(y / 8) % 2) * 4;
+            ctx.beginPath();
+            ctx.arc(x + offsetX, y, 1.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+
+    return canvas;
+}
+
 function generateCrateTexture(size = 256) {
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -235,6 +302,12 @@ export function getTexture(type, repeatX = 1, repeatY = 1) {
             break;
         case 'crate':
             canvas = generateCrateTexture();
+            break;
+        case 'blade':
+            canvas = generateBladeTexture();
+            break;
+        case 'knifeHandle':
+            canvas = generateKnifeHandleTexture();
             break;
         default:
             return null;

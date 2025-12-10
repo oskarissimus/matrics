@@ -27,6 +27,19 @@ export const HP = {
 };
 
 export const WEAPONS = {
+    knife: {
+        id: 'knife',
+        name: 'Knife',
+        slot: 1,
+        damage: 55,
+        attackRate: 400,
+        range: 2.0,
+        attackAngle: Math.PI / 3,
+        attackDuration: 180,
+        position: { x: 0.15, y: -0.2, z: -0.3 },
+        rotationY: -0.3,
+        isMelee: true
+    },
     pistol: {
         id: 'pistol',
         name: 'Pistol',
