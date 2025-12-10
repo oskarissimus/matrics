@@ -36,8 +36,8 @@ export const WEAPONS = {
         range: 2.0,
         attackAngle: Math.PI / 3,
         attackDuration: 180,
-        position: { x: 0.3, y: -0.15, z: -0.35 },
-        rotationY: -0.2,
+        position: { x: 0.15, y: -0.2, z: -0.3 },
+        rotationY: -0.3,
         isMelee: true
     },
     pistol: {

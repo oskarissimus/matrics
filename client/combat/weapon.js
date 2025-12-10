@@ -27,25 +27,11 @@ function createKnifeModel() {
     edgeMesh.position.set(-0.08, -0.004, -0.015);
     group.add(edgeMesh);
 
-    const tipGeometry = new THREE.BufferGeometry();
-    const tipVertices = new Float32Array([
-        -0.14, 0.005, 0.015,
-        -0.14, -0.005, 0.015,
-        -0.18, 0, -0.01,
-        -0.14, 0.005, -0.015,
-        -0.14, -0.005, -0.015,
-        -0.18, 0, -0.01,
-    ]);
-    tipGeometry.setAttribute('position', new THREE.BufferAttribute(tipVertices, 3));
-    tipGeometry.computeVertexNormals();
+    const tipGeometry = new THREE.ConeGeometry(0.018, 0.06, 4);
     const tipMesh = new THREE.Mesh(tipGeometry, bladeMaterial);
+    tipMesh.rotation.z = Math.PI / 2;
+    tipMesh.position.set(-0.17, 0, 0);
     group.add(tipMesh);
-
-    const tipBoxGeometry = new THREE.BoxGeometry(0.04, 0.008, 0.025);
-    const tipBoxMesh = new THREE.Mesh(tipBoxGeometry, bladeMaterial);
-    tipBoxMesh.position.set(-0.16, 0, 0);
-    tipBoxMesh.rotation.z = 0.15;
-    group.add(tipBoxMesh);
 
     const serrationMaterial = new THREE.MeshPhongMaterial({
         color: 0x888888,
