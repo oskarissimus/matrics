@@ -1,5 +1,7 @@
 import { inputState } from '../state.js';
 import { shoot } from '../combat/shooting.js';
+import { meleeAttack } from '../combat/melee.js';
+import { getCurrentWeapon } from '../combat/weapon.js';
 import { MOUSE_SENSITIVITY } from '../constants.js';
 
 export function onMouseMove(event) {
@@ -10,6 +12,11 @@ export function onMouseMove(event) {
 
 export function onMouseDown(event) {
     if (event.button === 0) {
-        shoot();
+        const weapon = getCurrentWeapon();
+        if (weapon && weapon.isMelee) {
+            meleeAttack();
+        } else {
+            shoot();
+        }
     }
 }

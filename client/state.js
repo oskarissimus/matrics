@@ -71,6 +71,10 @@ export const weaponState = {
     isSwitching: false
 };
 
+export const meleeState = {
+    isAttacking: false
+};
+
 export function resetGameState() {
     gameState.isDead = false;
     gameState.currentHP = HP.MAX;

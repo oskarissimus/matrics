@@ -30,6 +30,7 @@ export function setupSocketEvents() {
     socket.on('playerRespawn', handlePlayerRespawn);
     socket.on('playerLeft', handlePlayerLeft);
     socket.on('playerSkinChanged', handlePlayerSkinChanged);
+    socket.on('playerMeleeAttack', handlePlayerMeleeAttack);
     socket.on('pong', handlePong);
 
     startPingMeasurement();
@@ -262,4 +263,7 @@ function handlePlayerRespawn(data) {
 
 function handlePlayerLeft(playerId) {
     removePlayer(playerId);
+}
+
+function handlePlayerMeleeAttack(data) {
 }
