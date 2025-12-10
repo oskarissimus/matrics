@@ -81,10 +81,11 @@ export function updateBullets(deltaTime) {
         }
 
         const oldPosition = bullet.mesh.position.clone();
-        bullet.mesh.position.addScaledVector(bullet.direction, bullet.speed);
+        const moveDistance = bullet.speed * deltaTime;
+        bullet.mesh.position.addScaledVector(bullet.direction, moveDistance);
 
         bulletRaycaster.set(oldPosition, bullet.direction);
-        bulletRaycaster.far = bullet.speed;
+        bulletRaycaster.far = moveDistance;
         const hits = bulletRaycaster.intersectObjects(entityState.obstacleMeshes, false);
         if (hits.length > 0) {
             removeBullet(bullet, i);

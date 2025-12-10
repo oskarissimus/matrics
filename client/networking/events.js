@@ -1,15 +1,17 @@
 import * as THREE from 'three';
-import { networkState, gameState, sceneState, entityState, uiState, inputState } from '../state.js';
+import { networkState, gameState, sceneState, entityState, uiState, inputState, performanceState } from '../state.js';
 import { HP, CHARACTER_Y_OFFSET, EYE_HEIGHT } from '../constants.js';
 import { loadMap } from '../map/loader.js';
 import { addPlayer, removePlayer, recreatePlayer } from '../player/remote-players.js';
 import { createBullet } from '../combat/bullets.js';
-import { updateHPDisplay } from '../ui/hud.js';
+import { updateHPDisplay, updatePing } from '../ui/hud.js';
 import { updateScoreboardVisibility, renderScoreboard } from '../ui/scoreboard.js';
 import { addConsoleOutput } from '../ui/console.js';
 import { createDeadBody } from '../player/character-model.js';
 import { handleNameChangeRejected } from '../ui/username.js';
 import { hideAllWeapons, showCurrentWeapon } from '../combat/weapon.js';
+
+let pingInterval = null;
 
 export function setupSocketEvents() {
     const socket = networkState.socket;
@@ -29,6 +31,26 @@ export function setupSocketEvents() {
     socket.on('playerLeft', handlePlayerLeft);
     socket.on('playerSkinChanged', handlePlayerSkinChanged);
     socket.on('playerMeleeAttack', handlePlayerMeleeAttack);
+    socket.on('pong', handlePong);
+
+    startPingMeasurement();
+}
+
+function startPingMeasurement() {
+    if (pingInterval) {
+        clearInterval(pingInterval);
+    }
+    pingInterval = setInterval(() => {
+        if (networkState.socket && networkState.socket.connected) {
+            performanceState.lastPingTime = Date.now();
+            networkState.socket.emit('ping');
+        }
+    }, 2000);
+}
+
+function handlePong() {
+    const ping = Date.now() - performanceState.lastPingTime;
+    updatePing(ping);
 }
 
 function handleInit(data) {
